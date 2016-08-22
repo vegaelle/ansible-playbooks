@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    server_name  {{ domains | join(' ') }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443;
+    server_name {{ domains | join(' ') }};
+
+    ssl    on;
+    ssl_certificate    /etc/ssl/certs/letsencrypt/{{ main_domain }}.crt;
+    ssl_certificate_key    /etc/ssl/private/letsencrypt/{{ main_domain }}.key;
+
+    include tls.conf;
+
+    access_log /home/{{ user }}/logs/access_log main;
+    error_log /home/{{ user }}/logs/error_log info;
+
+    root /home/{{ user }}/docroot;
+    index index.htm index.html;
+}

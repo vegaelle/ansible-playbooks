@@ -1,0 +1,43 @@
+---
+- hosts: saint-nectaire
+  remote-user: root
+
+  vars_prompt:
+    - name: "user"
+      prompt: "what is the username for the new website owner?"
+    - name: "domain"
+      prompt: "what is the main domain name for the website? (if many, separate them with commas)"
+
+  tasks:
+    - name: Create facts
+      set_fact:
+          domains: "{{ domains.split(',') }}"
+          main_domain: "{{ domains | first }}"
+          alt_domains: "{{ domains | difference(main_domain) }}"
+
+    - name: Create user {{ user }}
+      user: name={{ user }}
+            shell=/bin/bash
+
+    - name: Add my public key to {{ user }}
+      authorized_keys: user={{ user }}
+                       key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Create TLS secret key
+      command: "openssl genrsa 4096 > ~/files/private/{{ main_domain }}.key"
+      remote_user: "letsencrypt"
+    - name: Create virtual host
+      template: src=templates/vhost.j2
+                dest=/etc/nginx/sites-available/{{ user }}
+
+    - name: Activate virtual host
+      file: src=/etc/nginx/sites-available/{{ user }}
+            dest=/etc/nginx/sites-enabled/{{ user }}
+            state=link
+      notify: reload nginx
+
+
+  handlers:
+      - name: reload nginx
+        service name=nginx state=reloaded
+
