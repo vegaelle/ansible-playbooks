@@ -1,0 +1,31 @@
+---
+- name: Create facts
+  set_fact:
+      domains: "{{ domain.split(',') }}"
+- name: Create facts
+  set_fact:
+      main_domain: "{{ domains | first }}"
+- name: Create facts
+  set_fact:
+      alt_domains: "{{ domains | difference(main_domain) }}"
+
+- name: Create TLS secret key
+  shell: openssl genrsa 4096 > private/{{ main_domain }}.key
+         chdir=/home/letsencrypt/files
+  become: true
+  become_user: letsencrypt
+
+- name: Create CSR file
+  shell: openssl req -new -sha256 -key private/{{ main_domain }}.key -subj "/" -reqexts SAN -config <(cat /etc/ssl/openssl.cnf <(printf "[SAN]\nsubjectAltName=DNS:{{ domains | join(', DNS:') }}")) > csr/{{ main_domain }}.csr
+         chdir=/home/letsencrypt/files
+         executable=/bin/bash
+  become: true
+  become_user: letsencrypt
+
+- name: Provision Let's Encrypt certificate
+  shell: python ./acme-tiny/acme_tiny.py --account-key files/user.key --csr files/csr/{{ main_domain }}.csr --acme-dir docroot/ > files/certs/{{ main_domain }}.crt && cat files/lets-encrypt-x3-cross-signed.pem >> files/certs/{{ main_domain }}.crt
+         chdir=/home/letsencrypt
+  become: true
+  become_user: letsencrypt
+  notify: reload nginx
+...
