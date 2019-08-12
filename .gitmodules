@@ -1,0 +1,3 @@
+[submodule "ansible-proxmox-inventory"]
+	path = ansible-proxmox-inventory
+	url = ./ansible-proxmox-inventory
