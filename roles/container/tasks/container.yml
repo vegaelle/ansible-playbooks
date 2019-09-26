@@ -1,0 +1,119 @@
+---
+- name: Create ZFS volume passphrase
+  set_fact:
+    zfs_volume_passphrase: "{{ lookup('password', '/dev/null length=64') }}"
+    zfs_volume: "rpool/data/encrypted-{{ ctid }}"
+    vlan: "{% if vlan %}{{ vlan }}{% else %}{{ ctid }}{% endif %}"
+
+- name: Create backup passphrase
+  set_fact:
+    backup_passphrase: "{{ lookup('password', '/dev/null length=64') }}"
+
+- name: Create bridge info
+  set_fact:
+    vlan_iface: "vmbr1.{{ vlan }}"
+    ip: "10.0.{{ vlan }}.{{ ctid }}"
+
+- name: Create ZFS volume
+  command: "zfs create -o encryption=on -o keyformat=passphrase {{ zfs_volume }}"
+  args:
+    stdin: "{{ zfs_volume_passphrase }}"
+
+# - name: Mount ZFS volume
+#   command: "zfs mount {{ zfs_volume }}"
+
+- name: Create ZFS pool
+  command: "pvesm add zfspool root-{{ ctid }} --pool {{ zfs_volume }}"
+
+- name: Create ZFS disk volume
+  command: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
+
+- name: Create VLAN
+  include: vlan.yml
+  when: "vlan_iface != '0'"
+
+- name: Activate VLAN
+  command: "ifup vmbr1.{{ vlan }}"
+  when: "vlan_iface != '0'"
+
+- name: Create container description
+  set_fact:
+    container_desc: "{ \"groups\": {{ roles }} }"
+
+- name: Create container
+  command:
+    argv:
+      - "pct"
+      - "create"
+      - "{{ ctid }}"
+      - "local:vztmpl/{{ image }}"
+      - "--cores={{ cpu_cores }}"
+      - "--cpuunits={{ cpu_units }}"
+      - "--description='{{ container_desc }}'"
+      - "--hostname={{ main_domain }}"
+      - "--memory={{ memory }}"
+      - "--net0=name=eth0,bridge=vmbr1,firewall=1,gw=10.0.{{ vlan }}.1,ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %}"
+      - "--onboot=0"
+      - "--ostype={{ ostype }}"
+      - "--rootfs=volume=root-{{ ctid }}:subvol-{{ ctid }}-disk-0,size={{ disk_size }}"
+      - "--start=0"
+      - "--swap={{ swap }}"
+
+- name: Add Ansible Host
+  add_host:
+    name: new_host
+    domains: "{{ domain }}"
+    groups: "{{ roles }}"
+    ct_hostname: "{{ main_domain }}"
+    ctid: "{{ ctid }}"
+    zfs_volume_passphrase: "{{ zfs_volume_passphrase }}"
+    backup_passphrase: "{{ backup_passphrase }}"
+    zfs_pool: "{{ zfs_volume }}"
+    zfs_volumes:
+      - "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
+    ip: "10.0.{{ vlan }}.{{ ctid }}"
+    vlan: "{{ vlan }}"
+
+- name: Add firewall rules
+  template:
+    src: {{ firewall_file }}
+    dest: "/root/tmp/{{ ctid }}.fw"
+    owner: root
+
+- name: Copy firewall rules
+  # copy:
+  #   remote_src: yes
+  #   src: "/root/tmp/{{ ctid }}.fw"
+  #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
+  command: "cp /root/tmp/{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
+
+- name: Remove tmp file
+  file:
+    path: "/root/tmp/{{ ctid }}.fw"
+    state: absent
+
+- name: Start container
+  command: "pct start {{ ctid }}"
+
+- name: Update container packages
+  command: "pct exec {{ ctid }} /sbin/apk update"
+
+- name: Install Python3 in container
+  command: "pct exec {{ ctid }} /sbin/apk add python3"
+  when: "ostype == 'alpine'"
+
+- name: Create public dir in container
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+    state: directory
+  when: "'http' not in roles"
+
+- name: Mount public dir
+  mount:
+    src: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+    path: "/{{ zfs_volumes[reverse_proxy.ctid].pool }}/subvol-{{ reverse_proxy.ctid }}-disk-0/srv/public/{{ ctid }}"
+    opts: bind
+    fstype: none
+    state: mounted
+  when: "'http' not in roles"
+...

@@ -1,0 +1,2 @@
+post-up iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport {{ port }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}
+post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport {{ port }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}

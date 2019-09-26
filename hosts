@@ -1,0 +1,2 @@
+[hypervisors]
+brie	ansible_host=brie.opchee.se	ansible_connection=ssh ansible_user=root ansible_network_os=debian

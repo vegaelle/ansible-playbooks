@@ -1,0 +1,20 @@
+[OPTIONS]
+
+log_level_out: nolog
+enable: 1
+policy_in: DROP
+ipfilter: 1
+log_level_in: nolog
+
+[RULES]
+
+{% for rp in reverse_proxies %}
+IN ACCEPT -source {{ rp.ip }} -p icmp
+{% endfor %}
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.1
+{% for rp in reverse_proxies %}
+IN ACCEPT -i net0 -source {{ rp.ip }} -dest {{ ip }} -p tcp -dport 80
+{% endfor %}
+IN REJECT -i net0 -dest 10.0.{{ vlan }}.0/24
+OUT ACCEPT -i net0 -dest 10.0.{{ vlan }}.0/24
+OUT REJECT -i net0 -dest 10.0.0.0/16

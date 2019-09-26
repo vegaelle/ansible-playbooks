@@ -1,0 +1,10 @@
+---
+- name: Create VLAN device
+  template:
+    src: vlan.j2
+    dest: "/etc/network/interfaces.d/{{ vlan_iface }}.conf"
+    owner: root
+
+- name: Activate VLAN
+  command: "ifup vmbr1.{{ vlan }}"
+...

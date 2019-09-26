@@ -1,0 +1,140 @@
+---
+- hosts: hypervisors
+  remote_user: root
+  vars_prompt:
+    - name: "domain"
+      prompt: "what is the main domain name for the website? (if many, separate them with commas)"
+      private: no
+    - name: "role"
+      prompt: "what are the roles for this container? (separate them with commas)"
+      private: no
+      default: "app"
+    - name: "vlan"
+      prompt: "if the container belongs to an existing VLAN, what is it?"
+      private: no
+      default: ""
+
+  tasks:
+    - name: Create facts
+      set_fact:
+        domains: "{{ domain.split(',') }}"
+    - name: Create facts
+      set_fact:
+        main_domain: "{{ domains | first }}"
+    - name: Create facts
+      set_fact:
+        roles: "{{ role.split(',') }}"
+
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: Define last existing container ID
+      shell: "pct list | tail -n 1 | awk '{print $1}'"
+      register: last_ctid
+
+    - name: Define new container ID
+      set_fact:
+        ctid: "{{ last_ctid.stdout|int + 1 }}"
+
+    - name: Create container
+      include_role:
+        name: "{{ item }}"
+        tasks_from: container
+      loop: "{{ roles }}"
+
+- name: Setup the container system
+  hosts: "{{ ctid }}"
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: Include role tasks
+      include_role:
+        name: "{{ item }}"
+        tasks_from: system
+      loop: "{{ roles }}"
+
+- name: Setup backup account
+  hosts: backup
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: Create new container user
+      meta: noop
+
+- name: Add volume info in vault
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+    # - name: Test
+    #   debug:
+    #     msg: "hostname: {{ hostvars['new_host'] | hostvars_tojson }}"
+    - name: Call add_host.py
+      command: "./add_host.py '{{ hostvars['new_host'] | hostvars_tojson }}'"
+
+- name: Setup monitoring
+  hosts: monitoring
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: "TODO: Do whatever is required"
+      meta: noop
+
+- name: Setup DNS
+  hosts: dns
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: Add DNS entries
+      meta: noop
+
+    - name: Provision certificate
+      meta: noop
+
+- name: Setup front server
+  hosts: http
+  tasks:
+    - name: Check that we’re not overriding a reverse proxy
+      meta: end_play
+      when: "'http' in roles and reverse_proxy.ctid"
+    - name: Check that we’re not overriding a mail server
+      meta: end_play
+      when: "'miab' in roles and mailinabox.ctid"
+
+    - name: Add virtualhost
+      meta: noop
+      notify: Reload HTTP server
+  handlers:
+    - name: Reload HTTP server
+      meta: noop
+...
+

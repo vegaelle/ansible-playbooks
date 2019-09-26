@@ -1,0 +1,26 @@
+---
+- hosts: hypervisors
+  remote_user: root
+
+  tasks:
+    - name: Load ZFS key
+      command: "zfs load-key {{ item.pool }}"
+      args:
+        stdin: "{{ item.passphrase }}"
+      loop: "{{ zfs_volumes.values() | list }}"
+
+    - name: Mount ZFS volumes
+      command: "zfs mount {{ item }}"
+      # debug:
+      #   msg: "zfs mount {{ item.1 }}"
+      loop: "{{ zfs_volumes | get_zvolumes }}"
+
+      # - name: Mount public dirs
+
+    - name: Start containers
+      command: "pct start {{ item.ctid }}"
+      # debug:
+      #   msg: "pct start {{ item.1.ctid }}"
+      loop: "{{ zfs_volumes | get_containers }}"
+
+...

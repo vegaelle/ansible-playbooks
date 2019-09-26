@@ -1,0 +1,6 @@
+---
+- name: Setup container
+  include_role:
+    name: container
+    tasks_from: container
+...

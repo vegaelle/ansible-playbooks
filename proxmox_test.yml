@@ -1,0 +1,40 @@
+---
+- hosts: brie
+  tasks:
+    - name: Debug variables
+      debug:
+        msg: "{{ zfs_volumes.values() }}"
+
+- hosts: running
+  remote_user: root
+
+  tasks:
+    - name: Ping
+      ping:
+        data: "pong"
+    - name: Test on remote
+      command: 'hostname'
+      register: blep
+    - name: add host
+      add_host:
+        name: new_host
+        groups: temp
+        DEBUG: "{{ blep }}"
+
+    - name: Create variable
+      set_fact:
+        test: 'proxmox_test'
+
+    - name: Test roles dependency
+      include_role:
+        name: r2
+        tasks_from: demo
+- name: Local command
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Test
+      debug:
+        msg: "hostname: {{ hostvars['new_host'] }}"
+...
+

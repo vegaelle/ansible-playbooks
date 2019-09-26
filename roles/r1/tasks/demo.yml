@@ -1,0 +1,6 @@
+---
+- name: Test from R2:demo
+  debug:
+    msg: "Hello from R2:demo. test={{ test }}"
+...
+

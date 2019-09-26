@@ -1,0 +1,90 @@
+---
+- name: Remove monitoring config
+  hosts: monitoring
+  tasks:
+    - name: "TODO: Do whatever is required"
+      meta: noop
+
+- hosts: hypervisors
+  remote_user: root
+  vars_prompt:
+    - name: "ctid"
+      prompt: "what is the container ID to delete"
+      private: no
+
+  tasks:
+
+    - name: Get vault data
+      set_fact:
+        host_vars: "{{ zfs_volumes | get(ctid) }}"
+
+    - name: Get status of container
+      command: "pct status {{ ctid }}"
+      register: ct_status
+
+    - name: Stop container
+      command: "pct stop {{ ctid }}"
+      when: "'running' in ct_status.stdout"
+
+    - name: Delete container
+      command: "pct destroy {{ ctid }}"
+
+    - name: Remove storage
+      command: "pvesm remove root-{{ ctid }}"
+
+    - name: Remove ZFS volume
+      command: "zfs destroy {{ host_vars.pool }}"
+
+    # - name: Remove firewall rules
+    #   file:
+    #     path: "/etc/pve/firewall/{{ ctid }}.fw"
+    #     state: absent
+
+    - name: Check if VLAN is unused
+      shell: "grep -c 'tag-{{ host_vars.vlan }}' /etc/pve/lxc/* | grep -v ':0$' | echo -n"
+      register: vlan_uses
+
+    - name: Shutdown VLAN
+      command: "ifdown vmbr1.{{ host_vars.vlan }}"
+      when: "int(vlan_uses.stdout) >= 1"
+
+    - name: Remove VLAN
+      file:
+        path: "/etc/network/interfaces.d/vmbr1.{{ host_vars.vlan }}.conf"
+        state: absent
+      when: "int(vlan_uses.stdout) >= 1"
+
+- name: Remove backup account
+  hosts: backup
+  tasks:
+    - name: Create new container user
+      meta: noop
+
+- name: Remove volume info in vault
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    # - name: Test
+    #   debug:
+    #     msg: "hostname: {{ hostvars['new_host'] | hostvars_tojson }}"
+    - name: Call remove_host.py
+      command: "./remove_host.py '{{ ctid }}'"
+
+- name: Setup DNS
+  hosts: dns
+  tasks:
+    - name: Remove DNS entries
+      meta: noop
+
+- name: Setup front server
+  hosts: http
+  tasks:
+    - name: Remove virtualhost
+      meta: noop
+      notify: Reload HTTP server
+  handlers:
+    - name: Reload HTTP server
+      meta: noop
+...
+
+

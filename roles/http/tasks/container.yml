@@ -1,0 +1,52 @@
+---
+- name: Set custom facts
+  set_fact:
+    firewall_file: firewall_http.j2
+- name: Setup container
+  include_role:
+    name: container
+    tasks_from: container
+- name: Set port number
+  set_fact:
+    port: 80
+- name: "Add port redirection for {{ port }}"
+  template:
+    src: port_redir.j2
+    dest: "/etc/network/ports.d/{{ port }}.conf"
+- name: Set port number
+  set_fact:
+    port: 443
+- name: "Add port redirection for {{ port }}"
+  template:
+    src: port_redir.j2
+    dest: "/etc/network/ports.d/{{ port }}.conf"
+- name: Create public dir
+  file:
+    path: /srv/public
+    state: directory
+
+- name: Bind-mount public dirs
+  mount:
+    src: "/{{ item.pool }}/subvol-{{ item.ctid }}-disk-0/srv/public"
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/{{ item.ctid }}"
+    opts: bind
+    fstype: none
+    state: mounted
+  loop: "zfs_volumes"
+  when: "item.ctid != ctid"
+
+- name: Create Let’s Encrypt dir
+  file:
+    path: /etc/ssl/letsencrypt
+    state: directory
+
+- name: Bind-mount Let’s Encrypt dirs
+  mount:
+    src: "/{{ zfs_volumes[mailinabox.ctid].pool }}/subvol-{{ mailinabox.ctid }}-disk-0/home/user-data/ssl/"
+    path: "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/ssl/letsencrypt"
+    opts: bind
+    fstype: none
+    state: mounted
+  when: "mailinabox.ctid"
+...
+
