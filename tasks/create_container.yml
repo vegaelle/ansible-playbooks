@@ -1,0 +1,12 @@
+---
+- name: Set hostvars
+  set_fact:
+    host: "{{ hostvars[item] }}"
+    main_domain: "{{ item }}"
+    ctid: "{{ hostvars[item].ansible_ssh_extra_args }}"
+    vlan: "{{ hostvars[item].vlan }}"
+- name: Include role
+  include_role:
+    name: "{{ host.role }}"
+    tasks_from: container
+...

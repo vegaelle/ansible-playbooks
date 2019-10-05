@@ -1,0 +1,3 @@
+ansible_host: brie.opchee.se
+ansible_user: root
+ansible_connection: lxc_ssh

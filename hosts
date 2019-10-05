@@ -1,2 +1,7 @@
 [hypervisors]
-brie	ansible_host=brie.opchee.se	ansible_connection=ssh ansible_user=root ansible_network_os=debian
+brie                foo=bar
+
+[containers]
+patate.tech         vlan=0          role=http       ansible_ssh_extra_args=100
+mail.patate.tech    vlan=101        role=miab       ansible_ssh_extra_args=101
+gordon.re           vlan=102        role=app        ansible_ssh_extra_args=102

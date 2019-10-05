@@ -3,7 +3,20 @@
   tasks:
     - name: Debug variables
       debug:
-        msg: "{{ zfs_volumes.values() }}"
+        msg: "{{ foo }}"
+
+    - name: Set new var value
+      set_fact:
+        foo: baz
+
+    - name: Check new value
+      debug:
+        msg: "{{ hostvars['brie']['foo'] }}"
+
+    - name: Loop over containers
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ groups['containers'] }}"
 
 - hosts: running
   remote_user: root

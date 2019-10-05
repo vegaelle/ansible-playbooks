@@ -1,0 +1,56 @@
+---
+- hosts: hypervisors
+  tasks:
+    - name: Create containers
+      include: tasks/create_container.yml
+      loop: "{{ groups['containers'] }}"
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Save containers variables
+      meta: noop
+    - name: Call add_host.py
+      command: "./add_host.py -h {{ item }} '{{ hostvars[item + '.new_host'] | hostvars_tojson }}'"
+      loop: "{{ groups['contains'] }}"
+
+- hosts: containers
+  tasks:
+    - name: Setup the containers system
+      include_role:
+        name: "{{ hostvars.role }}"
+        tasks_from: system
+
+- hosts: backup
+  tasks:
+    - name: Setup backup account
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+
+- hosts: monitoring
+  tasks:
+    - name: Setup monitoring
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+
+- name: Setup DNS
+  hosts: dns
+  tasks:
+    - name: Add DNS entries
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+    - name: Provision certificate
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+
+- name: Setup front server
+  hosts: http
+  tasks:
+    - name: Add virtualhost
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+      notify: Reload HTTP server
+  handlers:
+    - name: Reload HTTP server
+      meta: noop
+...
