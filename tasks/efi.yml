@@ -1,0 +1,30 @@
+---
+- name: Get partitions uuids
+  shell: "ls -l /dev/disk/by-uuid | grep sd.2 | awk '{print $9}'"
+  register: uuids
+
+- name: Put uuids in EFIboot file
+  template:
+    src: templates/pve-efiboot-uuids
+    dest: /etc/kernel/pve-efiboot-uuids
+
+- name: Get current kernel version
+  command: uname -r
+  register: kernel_version
+
+- name: Write EFI loader
+  include: tasks/efi_loader.yml
+  loop:
+    - sda2
+    - sdb2
+
+- name: Add kernel to EFI
+  command: "pve-efiboot-tool kernel add {{ kernel_version.stdout }}"
+
+- name: Update EFI
+  command: pve-efiboot-tool update refresh
+
+- debug:
+  msg: Please ensure that the server boots on EFI
+
+...

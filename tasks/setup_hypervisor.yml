@@ -1,0 +1,58 @@
+---
+- name: Disable Proxmox Enterprise sources
+  file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: update system:
+  apt:
+    update: dist
+    update_cache: yes
+
+- name: Disable rpcbind
+  systemd:
+    name: rpcbind
+    state: stopped
+    enabled: no
+
+- name: Setup U2F
+  lineinfile:
+    path: /etc/pve/datacenter.cfg
+    line: "u2f: appid=https://{{ hostname }}:8006"
+
+- name: Ensure that password authentication is disabled
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#(PasswordAuthentication) yes$"
+    replace: "\1 no"
+
+- name: Setup EFI
+  include: tasks/efi.yml
+
+- name: Update the appliance list
+  command: "pveam update"
+
+- name: Download container templates
+  command: "pveam download local {{ item }}"
+  loop:
+    - ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
+    - alpine-3.10-default_20190626_amd64.tar.xz
+
+- name: Create bridge interface
+  blockinfile:
+    path: /etc/network/interfaces
+    block: "{{ lookup('file', './files/interfaces') }}"
+
+- name: Prepare networking for included files
+  file:
+    path: /etc/interfaces/ports.d
+    state: directory
+
+- name: Activate bridge
+  command: "ifup vmbr1"
+
+- name: Set up firewall
+  template:
+    src: templates/cluster.fw
+    dest: /etc/pve/firewall/cluster.fw
+...

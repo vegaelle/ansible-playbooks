@@ -1,0 +1,9 @@
+[OPTIONS]
+
+enable: 1
+
+[RULES]
+
+IN ACCEPT -i net0 -p tcp -dport 443 -log nolog
+IN ACCEPT -i net0 -p tcp -dport 80 -log nolog
+

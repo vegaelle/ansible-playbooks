@@ -1,0 +1,15 @@
+auto vmbr1
+iface vmbr1 inet static
+	address  10.0.0.1
+	netmask  16
+	bridge-ports enp3s0.1
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094
+    post-up echo 1 > /proc/sys/net/ipv4/forward
+    post-up iptables -t nat -A POSTROUTING -s '10.0.0.0/16' -o vmbr0 -j MASQUERADE
+    post-down iptables -t nat -D POSTROUTING -s '10.0.0.0/16' -o vmbr0 -j MASQUERADE
+    post-up iptables -t raw -A PREROUTING -i fwbr+ -j CT --zone 1
+    post-down iptables -t raw -D PREROUTING -i fwbr+ -j CT --zone 1
+    source-directory /etc/network/ports.d

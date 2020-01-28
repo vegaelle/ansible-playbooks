@@ -1,6 +1,9 @@
 ---
 - hosts: hypervisors
   tasks:
+    - name: Setup hypervisor
+      include: tasks/setup_hypervisor.yml
+
     - name: Create containers
       include: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
@@ -12,7 +15,7 @@
       meta: noop
     - name: Call add_host.py
       command: "./add_host.py -h {{ item }} '{{ hostvars[item + '.new_host'] | hostvars_tojson }}'"
-      loop: "{{ groups['contains'] }}"
+      loop: "{{ groups['containers'] }}"
 
 - hosts: containers
   tasks:

@@ -1,0 +1,9 @@
+[OPTIONS]
+
+enable: 1
+
+[IPSET management]
+
+{% for ip in management_ips %}
+{{ ip }}
+{% endfor %}

@@ -1,7 +1,7 @@
 ---
 - name: Set custom facts
   set_fact:
-    firewall_file: firewall_http.j2
+    firewall_file: firewall_miab.j2
 - name: Setup container
   include_role:
     name: container

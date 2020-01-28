@@ -1,0 +1,23 @@
+---
+- name: Mount EFI partition
+  mount:
+    src: "/dev/{{ item }}"
+    path: /boot/efi
+    state: mounted
+
+- name: Create EFI/proxmox dirs
+  file:
+    src: /boot/efi/EFI/proxmox
+    state: directory
+
+- name: Create loader.conf
+  template:
+    src: templates/loader.conf
+    dest: /boot/efi/loader/loader.conf
+
+- name: Umount partition
+  mount:
+    src: "/dev/{{ item }}"
+    path: /boot/efi
+    state: unmounted
+...

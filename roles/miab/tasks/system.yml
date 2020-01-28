@@ -1,0 +1,8 @@
+---
+- name: Install nginx
+  apk:
+    name: nginx
+- name: Hardening nginx
+  include_role:
+    name: dev-sec.nginx-hardening
+...

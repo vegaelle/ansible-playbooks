@@ -1,13 +1,15 @@
 ---
 - name: Create ZFS volume passphrase
   set_fact:
-    zfs_volume_passphrase: "{{ lookup('password', '/dev/null length=64') }}"
+    passphrase: "{{ lookup('password', '/dev/null length=64') }}"
     zfs_volume: "rpool/data/encrypted-{{ ctid }}"
     vlan: "{% if vlan %}{{ vlan }}{% else %}{{ ctid }}{% endif %}"
+  when: passphrase is not defined
 
 - name: Create backup passphrase
   set_fact:
     backup_passphrase: "{{ lookup('password', '/dev/null length=64') }}"
+    when: backup_passphrase is not defined
 
 - name: Create bridge info
   set_fact:
@@ -17,7 +19,8 @@
 - name: Create ZFS volume
   command: "zfs create -o encryption=on -o keyformat=passphrase {{ zfs_volume }}"
   args:
-    stdin: "{{ zfs_volume_passphrase }}"
+    stdin: "{{ passphrase }}"
+    creates: "/{{ zfs_volume }}"
 
 # - name: Mount ZFS volume
 #   command: "zfs mount {{ zfs_volume }}"
@@ -27,6 +30,7 @@
 
 - name: Create ZFS disk volume
   command: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
+  creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
 
 - name: Create VLAN
   include: vlan.yml
@@ -108,12 +112,12 @@
     state: directory
   when: "'http' not in roles"
 
-- name: Mount public dir
-  mount:
-    src: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
-    path: "/{{ zfs_volumes[reverse_proxy.ctid].pool }}/subvol-{{ reverse_proxy.ctid }}-disk-0/srv/public/{{ ctid }}"
-    opts: bind
-    fstype: none
-    state: mounted
-  when: "'http' not in roles"
+# - name: Mount public dir
+#   mount:
+#     src: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+#     path: "/{{ zfs_volumes[reverse_proxy.ctid].pool }}/subvol-{{ reverse_proxy.ctid }}-disk-0/srv/public/{{ ctid }}"
+#     opts: bind
+#     fstype: none
+#     state: mounted
+#   when: "'http' not in roles"
 ...
