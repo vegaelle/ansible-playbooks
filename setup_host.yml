@@ -1,0 +1,9 @@
+---
+- hosts: containers
+  tasks:
+
+    - name: Setup the containers system
+      include_role:
+        name: "{{ role }}"
+        tasks_from: system
+...

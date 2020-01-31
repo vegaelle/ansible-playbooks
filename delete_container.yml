@@ -8,32 +8,55 @@
 - hosts: hypervisors
   remote_user: root
   vars_prompt:
-    - name: "ctid"
+    - name: "host"
       prompt: "what is the container ID to delete"
       private: no
 
   tasks:
 
+    - name: Create global host
+      add_host:
+        name: global
+        global_host: "{{ host }}"
+
     - name: Get vault data
       set_fact:
-        host_vars: "{{ zfs_volumes | get(ctid) }}"
+        host_vars: "{{ hostvars | get(host) }}"
+
+    - name: Get CTID
+      set_fact:
+        ctid: "{{ host_vars['ctid'] }}"
+
+    - name: Check if CT still exists
+      shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ ctid }}.conf | wc -l"
+      register: config_exists
 
     - name: Get status of container
       command: "pct status {{ ctid }}"
       register: ct_status
+      when: config_exists.stdout == '1'
 
     - name: Stop container
       command: "pct stop {{ ctid }}"
-      when: "'running' in ct_status.stdout"
+      when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
 
     - name: Delete container
-      command: "pct destroy {{ ctid }}"
+      command:
+        cmd: "pct destroy {{ ctid }}"
+        removes: "/etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ ctid }}.conf"
+
+    - name: Check if storage still exists
+      shell: "pvesm status | grep root-{{ ctid }} | wc -l"
+      register: storage_exists
 
     - name: Remove storage
       command: "pvesm remove root-{{ ctid }}"
+      when: storage_exists.stdout == '1'
 
     - name: Remove ZFS volume
-      command: "zfs destroy {{ host_vars.pool }}"
+      command:
+        cmd: "zfs destroy {{ host_vars['pool'] }}"
+        removes: "/rpool/data/encrypted-{{ ctid }}"
 
     # - name: Remove firewall rules
     #   file:
@@ -41,18 +64,24 @@
     #     state: absent
 
     - name: Check if VLAN is unused
-      shell: "grep -c 'tag-{{ host_vars.vlan }}' /etc/pve/lxc/* | grep -v ':0$' | echo -n"
+      shell: "grep -c 'tag-{{ host_vars['vlan'] }}' /etc/pve/lxc/* | grep -v ':0$' | echo -n"
       register: vlan_uses
 
     - name: Shutdown VLAN
-      command: "ifdown vmbr1.{{ host_vars.vlan }}"
-      when: "int(vlan_uses.stdout) >= 1"
+      command: "ifdown vmbr1.{{ host_vars['vlan'] }}"
+      when: "vlan_uses.stdout|int >= 1"
 
     - name: Remove VLAN
       file:
-        path: "/etc/network/interfaces.d/vmbr1.{{ host_vars.vlan }}.conf"
+        path: "/etc/network/interfaces.d/vmbr1.{{ host_vars['vlan'] }}.conf"
         state: absent
-      when: "int(vlan_uses.stdout) >= 1"
+      when: "vlan_uses.stdout|int >= 1"
+
+    - name: Remove ports redirections
+      shell: "grep -R {{ host }} /etc/network/ports.d/post-down | awk -F '{ print $1 }' | xargs bash; :"
+
+    - name: Remove ports redirections configs
+      shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
 
 - name: Remove backup account
   hosts: backup
@@ -68,7 +97,9 @@
     #   debug:
     #     msg: "hostname: {{ hostvars['new_host'] | hostvars_tojson }}"
     - name: Call remove_host.py
-      command: "./remove_host.py '{{ ctid }}'"
+      # command: "./remove_host.py '{{ ctid }}'"
+      file:
+        path: "./host_vars/{{ hostvars['global'].global_host }}"
 
 - name: Setup DNS
   hosts: dns

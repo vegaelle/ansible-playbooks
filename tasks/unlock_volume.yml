@@ -1,0 +1,28 @@
+- name: Set vars
+  set_fact:
+    host_vars: "{{ hostvars[item] }}"
+
+- name: Check if CT exists
+  shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ host_vars.ctid }}.conf | wc -l"
+  register: config_exists
+
+- name: Check if CT is up
+  command: "pct status {{ host_vars.ctid }}"
+  register: ct_status
+  when: config_exists.stdout == '1'
+
+- name: Load ZFS key
+  command: "zfs load-key {{ host_vars.pool }}"
+  args:
+    stdin: "{{ host_vars.passphrase }}"
+  when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
+
+- name: Mount ZFS volumes
+  command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ctid }}-disk-0"
+  when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
+
+  # - name: Mount public dirs
+
+- name: Start container
+  command: "pct start {{ host_vars.ctid }}"
+  when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"

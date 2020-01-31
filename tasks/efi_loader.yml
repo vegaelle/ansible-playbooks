@@ -4,11 +4,13 @@
     src: "/dev/{{ item }}"
     path: /boot/efi
     state: mounted
+    fstype: vfat
 
 - name: Create EFI/proxmox dirs
   file:
-    src: /boot/efi/EFI/proxmox
+    path: /boot/efi/EFI/proxmox
     state: directory
+    recurse: yes
 
 - name: Create loader.conf
   template:

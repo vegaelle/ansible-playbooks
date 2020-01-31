@@ -18,4 +18,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    print('This script is obsolete', file=sys.stdout)
+    os.exit(1)

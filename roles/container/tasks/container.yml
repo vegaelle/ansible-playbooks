@@ -1,20 +1,17 @@
 ---
-- name: Create ZFS volume passphrase
-  set_fact:
-    passphrase: "{{ lookup('password', '/dev/null length=64') }}"
-    zfs_volume: "rpool/data/encrypted-{{ ctid }}"
-    vlan: "{% if vlan %}{{ vlan }}{% else %}{{ ctid }}{% endif %}"
-  when: passphrase is not defined
-
-- name: Create backup passphrase
-  set_fact:
-    backup_passphrase: "{{ lookup('password', '/dev/null length=64') }}"
-    when: backup_passphrase is not defined
 
 - name: Create bridge info
   set_fact:
     vlan_iface: "vmbr1.{{ vlan }}"
     ip: "10.0.{{ vlan }}.{{ ctid }}"
+
+- name: Get reverse proxy IP
+  set_fact:
+    reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+  when: hostvars[node].role == 'http'
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: node
 
 - name: Create ZFS volume
   command: "zfs create -o encryption=on -o keyformat=passphrase {{ zfs_volume }}"
@@ -24,27 +21,27 @@
 
 # - name: Mount ZFS volume
 #   command: "zfs mount {{ zfs_volume }}"
+#
 
-- name: Create ZFS pool
-  command: "pvesm add zfspool root-{{ ctid }} --pool {{ zfs_volume }}"
+- name: Check if storage exists
+  shell: "pvesm status | grep root-{{ ctid }} | wc -l"
+  register: storage_exists
+
+- name: Create PVE storage
+  command:
+    cmd: "pvesm add zfspool root-{{ ctid }} --pool {{ zfs_volume }}"
+  when: storage_exists.stdout == '0'
 
 - name: Create ZFS disk volume
-  command: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
-  creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
+  command:
+    cmd: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
+    creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
 
 - name: Create VLAN
   include: vlan.yml
   when: "vlan != '0'"
 
-- name: Activate VLAN
-  command: "ifup vmbr1.{{ vlan }}"
-  when: "vlan != '0'"
-
-- name: Create container description
-  set_fact:
-    container_desc: "{ \"groups\": {{ roles }} }"
-
-- name: Create container
+- name: Create container  # WARN: can’t process CT update yet
   command:
     argv:
       - "pct"
@@ -53,7 +50,6 @@
       - "local:vztmpl/{{ image }}"
       - "--cores={{ cpu_cores }}"
       - "--cpuunits={{ cpu_units }}"
-      - "--description='{{ container_desc }}'"
       - "--hostname={{ main_domain }}"
       - "--memory={{ memory }}"
       - "--net0=name=eth0,bridge=vmbr1,firewall=1,gw=10.0.{{ vlan }}.1,ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %}"
@@ -62,26 +58,13 @@
       - "--rootfs=volume=root-{{ ctid }}:subvol-{{ ctid }}-disk-0,size={{ disk_size }}"
       - "--start=0"
       - "--swap={{ swap }}"
+    creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/bin"
 
-- name: Add Ansible Host
-  add_host:
-    name: "{{ domain }}.new_host"
-    domains: "{{ domain }}"
-    groups: "{{ roles }}"
-    ct_hostname: "{{ main_domain }}"
-    ctid: "{{ ctid }}"
-    zfs_volume_passphrase: "{{ zfs_volume_passphrase }}"
-    backup_passphrase: "{{ backup_passphrase }}"
-    zfs_pool: "{{ zfs_volume }}"
-    zfs_volumes:
-      - "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
-    ip: "10.0.{{ vlan }}.{{ ctid }}"
-    vlan: "{{ vlan }}"
 
 - name: Add firewall rules
   template:
-    src: {{ firewall_file }}
-    dest: "/root/tmp/{{ ctid }}.fw"
+    src: "{{ firewall_file }}"
+    dest: "/root/tmp-{{ ctid }}.fw"
     owner: root
 
 - name: Copy firewall rules
@@ -89,18 +72,54 @@
   #   remote_src: yes
   #   src: "/root/tmp/{{ ctid }}.fw"
   #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
-  command: "cp /root/tmp/{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
+  command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
 
 - name: Remove tmp file
   file:
-    path: "/root/tmp/{{ ctid }}.fw"
+    path: "/root/tmp-{{ ctid }}.fw"
     state: absent
+
+- name: "Add port redirections"
+  template:
+    src: port_redir_up.j2
+    dest: "/etc/network/ports.d/post-up/{{ port }}.conf"
+  loop: "{{ redirected_ports }}"
+  loop_control:
+    loop_var: port
+
+- name: "Add port redirections"
+  template:
+    src: port_redir_down.j2
+    dest: "/etc/network/ports.d/post-down/{{ port }}.conf"
+  loop: "{{ redirected_ports }}"
+  loop_control:
+    loop_var: port
+
+- name: Enable port redirections
+  iptables:
+    table: nat
+    chain: PREROUTING
+    in_interface: vmbr0
+    protocol: tcp
+    destination_port: "{{ port }}"
+    jump: DNAT
+    to_destination: "10.0.{{ vlan }}.{{ ctid }}"
+  loop: "{{ redirected_ports }}"
+  loop_control:
+    loop_var: port
+
+
+- name: Get container state
+  shell: "pct list | grep {{ ctid }} | awk '{print $2}'"
+  register: container_running
 
 - name: Start container
   command: "pct start {{ ctid }}"
+  when: container_running.stdout == 'stopped'
 
 - name: Update container packages
   command: "pct exec {{ ctid }} /sbin/apk update"
+  when: "ostype == 'alpine'"
 
 - name: Install Python3 in container
   command: "pct exec {{ ctid }} /sbin/apk add python3"
@@ -110,7 +129,7 @@
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
     state: directory
-  when: "'http' not in roles"
+  when: role != 'http'
 
 # - name: Mount public dir
 #   mount:
@@ -119,5 +138,5 @@
 #     opts: bind
 #     fstype: none
 #     state: mounted
-#   when: "'http' not in roles"
+#   when: role != 'http'
 ...

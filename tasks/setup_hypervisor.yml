@@ -4,9 +4,9 @@
     path: /etc/apt/sources.list.d/pve-enterprise.list
     state: absent
 
-- name: update system:
+- name: update system
   apt:
-    update: dist
+    upgrade: dist
     update_cache: yes
 
 - name: Disable rpcbind
@@ -24,7 +24,7 @@
   replace:
     path: /etc/ssh/sshd_config
     regexp: "^#(PasswordAuthentication) yes$"
-    replace: "\1 no"
+    replace: "\\1 no"
 
 - name: Setup EFI
   include: tasks/efi.yml
@@ -33,7 +33,9 @@
   command: "pveam update"
 
 - name: Download container templates
-  command: "pveam download local {{ item }}"
+  command:
+    cmd: "pveam download local {{ item }}"
+    creates: "/var/lib/vz/template/cache/{{ item }}"
   loop:
     - ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
     - alpine-3.10-default_20190626_amd64.tar.xz
@@ -42,14 +44,21 @@
   blockinfile:
     path: /etc/network/interfaces
     block: "{{ lookup('file', './files/interfaces') }}"
+  register: bridge_task
 
 - name: Prepare networking for included files
   file:
-    path: /etc/interfaces/ports.d
+    path: /etc/network/ports.d/post-up
+    state: directory
+
+- name: Prepare networking for included files
+  file:
+    path: /etc/network/ports.d/post-down
     state: directory
 
 - name: Activate bridge
-  command: "ifup vmbr1"
+  shell: "ifdown vmbr1; sleep 1; ifup vmbr1"
+  when: bridge_task.changed
 
 - name: Set up firewall
   template:

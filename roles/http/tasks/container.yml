@@ -6,11 +6,6 @@
   include_role:
     name: container
     tasks_from: container
-- name: "Add port redirections"
-  template:
-    src: port_redir.j2
-    dest: "/etc/network/ports.d/{{ port }}.conf"
-  loop: "{{ redirected_ports }}"
 - name: Create public dir
   file:
     path: /srv/public

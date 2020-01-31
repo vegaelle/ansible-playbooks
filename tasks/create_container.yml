@@ -5,6 +5,10 @@
     main_domain: "{{ item }}"
     ctid: "{{ hostvars[item].ansible_ssh_extra_args }}"
     vlan: "{{ hostvars[item].vlan }}"
+    passphrase: "{{ hostvars[item].zfs_volume_passphrase }}"
+    backup_passphrase: "{{ hostvars[item].backup_passphrase }}"
+    role: "{{ hostvars[item].role }}"
+    zfs_volume: "{{ hostvars[item].pool }}"
 - name: Include role
   include_role:
     name: "{{ host.role }}"

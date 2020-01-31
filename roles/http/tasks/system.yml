@@ -2,7 +2,45 @@
 - name: Install nginx
   apk:
     name: nginx
+- name: Install openssl
+  apk:
+    name: openssl
 - name: Hardening nginx
   include_role:
     name: dev-sec.nginx-hardening
+
+- name: Create docroot
+  file:
+    path: /srv/www/default
+    state: directory
+    owner: nginx
+    group: nginx
+
+- name: Create default index page
+  copy:
+    src: "files/99.default.conf"
+    dest: /etc/nginx/conf.d/99.default.conf
+    remote_src: no
+
+- name: Copy default index page
+  copy:
+    src: /var/lib/nginx/html/index.html
+    dest: /srv/www/default/index.html
+    owner: nginx
+    group: nginx
+    remote_src: yes
+
+- name: Create config for Let’s Encrypt challenges
+  debug:
+    msg: TODO
+
+- name: Start nginx
+  service:
+    name: nginx
+    state: started
+    runlevel: default
+- name: Reload nginx config
+  service:
+    name: nginx
+    state: reloaded
 ...

@@ -1,8 +1,55 @@
 ---
-- name: Install nginx
-  apk:
-    name: nginx
-- name: Hardening nginx
-  include_role:
-    name: dev-sec.nginx-hardening
+- name: Set Mailinabox env vars
+  set_fact:
+    miab_env:
+      NONINTERACTIVE: 1
+      PRIMARY_HOSTNAME: "{{ ansible_hostname }}"
+      EMAIL_ADDR: "me@{{ ansible_hostname }}"
+      LC_ALL: en_US.UTF-8
+      LC_CTYPE: en_US.UTF-8
+      LANGUAGE: en_US.UTF-8
+
+- name: update system
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: Install curl
+  apt:
+    name: curl
+
+- name: Install locales
+  locale_gen:
+    name: "{{ item }}"
+  loop:
+    - en_US.UTF-8
+    - fr_FR.UTF-8
+
+- name: Set default locale
+  command: "update-locale {{ item }}=en_US.UTF-8"
+  loop:
+    - LC_ALL
+    - LANGUAGE
+    - LC_CTYPE
+
+- name: Fix locale config file
+  copy:
+    src: files/locale
+    dest: /etc/default/locale
+    remote_src: no
+
+- name: Reboot
+  command: reboot
+
+- name: Wait for host to get up again
+  wait_for_connection:
+    timeout: 60
+
+- name: Install Mailinabox
+  shell: "curl -s https://mailinabox.email/setup.sh | bash"
+  environment: "{{ miab_env }}"
+
+- name: Print info messages
+  debug:
+    msg: "Mailinabox is installed. You can use the admin account me@{{ ansible_hostname }} with password 12345678"
 ...

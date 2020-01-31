@@ -4,6 +4,7 @@ enable: 1
 
 [RULES]
 
-IN ACCEPT -i net0 -p tcp -dport 443 -log nolog
-IN ACCEPT -i net0 -p tcp -dport 80 -log nolog
-
+{% for port in redirected_ports %}
+IN ACCEPT -i net0 -p tcp -dport {{ port }} -log nolog
+{% endfor %}
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.1

@@ -1,11 +1,8 @@
 ---
 - hosts: hypervisors
   tasks:
-    - name: Setup hypervisor
-      include: tasks/setup_hypervisor.yml
-
-    - name: Create containers
-      include: tasks/create_container.yml
+    - name: Create containers secrets
+      include: tasks/create_container_secrets.yml
       loop: "{{ groups['containers'] }}"
 
 - hosts: 127.0.0.1
@@ -14,14 +11,24 @@
     - name: Save containers variables
       meta: noop
     - name: Call add_host.py
-      command: "./add_host.py -h {{ item }} '{{ hostvars[item + '.new_host'] | hostvars_tojson }}'"
+      command: "./add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
+      loop: "{{ groups['containers'] }}"
+
+- hosts: hypervisors
+  tasks:
+    - name: Setup hypervisor
+      include: tasks/setup_hypervisor.yml
+
+    - name: Create containers
+      include: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
 
 - hosts: containers
   tasks:
+
     - name: Setup the containers system
       include_role:
-        name: "{{ hostvars.role }}"
+        name: "{{ role }}"
         tasks_from: system
 
 - hosts: backup
