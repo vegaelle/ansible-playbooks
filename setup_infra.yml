@@ -23,6 +23,32 @@
       include: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
 
+    - name: Create bind-mount for SSL certs
+      command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
+
+    - name: Create bind-mount for Let’s Encrypt challenges
+      command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
+
+    # - name: Create bind-mount for SSL certs
+    #   # command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
+    #   mount:
+    #     src: "/var/containers/miab/home/user-data/ssl"
+    #     path: "/var/containers/http/home/user-data/ssl"
+    #     opts: bind
+    #     fstype: none
+    #     state: mounted
+    #     fstab: /dev/null
+
+    # - name: Create bind-mount for Let’s Encrypt challenges
+    #   # command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
+    #   mount:
+    #     src: "/var/containers/miab/home/user-data/ssl/lets_encrypt/webroot"
+    #     path: "/var/containers/http/var/letsencrypt/docroot"
+    #     opts: bind
+    #     fstype: none
+    #     state: mounted
+    #     fstab: /dev/null
+
 - hosts: containers
   tasks:
 
@@ -30,6 +56,11 @@
       include_role:
         name: "{{ role }}"
         tasks_from: system
+
+    - name: Finish the containers setup
+      include_role:
+        name: "{{ role }}"
+        tasks_from: post-system
 
 - hosts: backup
   tasks:
@@ -43,24 +74,24 @@
       meta: noop
       loop: "{{ groups['containers'] }}"
 
-- name: Setup DNS
-  hosts: dns
-  tasks:
-    - name: Add DNS entries
-      meta: noop
-      loop: "{{ groups['containers'] }}"
-    - name: Provision certificate
-      meta: noop
-      loop: "{{ groups['containers'] }}"
+# - name: Setup DNS
+#   hosts: dns
+#   tasks:
+#     - name: Add DNS entries
+#       meta: noop
+#       loop: "{{ groups['containers'] }}"
+#     - name: Provision certificate
+#       meta: noop
+#       loop: "{{ groups['containers'] }}"
 
-- name: Setup front server
-  hosts: http
-  tasks:
-    - name: Add virtualhost
-      meta: noop
-      loop: "{{ groups['containers'] }}"
-      notify: Reload HTTP server
-  handlers:
-    - name: Reload HTTP server
-      meta: noop
+# - name: Setup front server
+#   hosts: http
+#   tasks:
+#     - name: Add virtualhost
+#       meta: noop
+#       loop: "{{ groups['containers'] }}"
+#       notify: Reload HTTP server
+#   handlers:
+#     - name: Reload HTTP server
+#       meta: noop
 ...

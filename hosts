@@ -1,7 +1,7 @@
 [hypervisors]
-brie                foo=bar         hostname=brie.opchee.se
+brie                hostname=brie.opchee.se         public_ip=178.63.47.165
 
 [containers]
-patate.tech         vlan=0          role=http       ansible_ssh_extra_args=100
-mail.patate.tech    vlan=101        role=miab       ansible_ssh_extra_args=101
-# gordon.re           vlan=102        role=app        ansible_ssh_extra_args=102
+front.pycodon.fr     vlan=0          role=http       ansible_ssh_extra_args=100
+pycodon.fr           vlan=101        role=miab       ansible_ssh_extra_args=101
+cryptolout.re       vlan=102        role=app        ansible_ssh_extra_args=102

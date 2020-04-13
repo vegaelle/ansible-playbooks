@@ -82,7 +82,7 @@
 - name: "Add port redirections"
   template:
     src: port_redir_up.j2
-    dest: "/etc/network/ports.d/post-up/{{ port }}.conf"
+    dest: "/etc/network/ports.d/post-up/{{ port.value }}.conf"
   loop: "{{ redirected_ports }}"
   loop_control:
     loop_var: port
@@ -90,7 +90,7 @@
 - name: "Add port redirections"
   template:
     src: port_redir_down.j2
-    dest: "/etc/network/ports.d/post-down/{{ port }}.conf"
+    dest: "/etc/network/ports.d/post-down/{{ port.value }}.conf"
   loop: "{{ redirected_ports }}"
   loop_control:
     loop_var: port
@@ -100,8 +100,8 @@
     table: nat
     chain: PREROUTING
     in_interface: vmbr0
-    protocol: tcp
-    destination_port: "{{ port }}"
+    protocol: "{{ port.proto }}"
+    destination_port: "{{ port.value }}"
     jump: DNAT
     to_destination: "10.0.{{ vlan }}.{{ ctid }}"
   loop: "{{ redirected_ports }}"

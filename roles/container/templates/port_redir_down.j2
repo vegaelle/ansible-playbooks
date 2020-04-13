@@ -1,2 +1,2 @@
-# Remove redirect port {{ port }} to {{ item }} ({{ ctid }})
-iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport {{ port }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}
+# Remove redirect port {{ port.value }} ({{ port.proto }}) to {{ item }} ({{ ctid }})
+iptables -t nat -D PREROUTING -i vmbr0 -p {{ port.proto }} --dport {{ port.value }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}

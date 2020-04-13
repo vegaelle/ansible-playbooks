@@ -1,3 +1,5 @@
 redirected_ports:
-  - 80
-  - 443
+  - value: 80
+    proto: tcp
+  - value: 443
+    proto: tcp

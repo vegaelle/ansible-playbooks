@@ -26,4 +26,13 @@
     - name: Unlock container
       include: tasks/unlock_volume.yml
       loop: "{{ groups['containers'] }}"
+
+    - name: Create bind-mount for SSL certs
+      command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
+
+    - name: Create bind-mount for Let’s Encrypt challenges
+      command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
+
+    - name: Start nginx
+      command: "pct exec 100 /etc/init.d/nginx start"
 ...

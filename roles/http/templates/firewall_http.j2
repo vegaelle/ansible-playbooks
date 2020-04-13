@@ -5,6 +5,6 @@ enable: 1
 [RULES]
 
 {% for port in redirected_ports %}
-IN ACCEPT -i net0 -p tcp -dport {{ port }} -log nolog
+IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog
 {% endfor %}
 IN ACCEPT -i net0 -source 10.0.{{ vlan }}.1

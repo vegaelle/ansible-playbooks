@@ -1,0 +1,46 @@
+---
+- hosts: hypervisors
+  tasks:
+    - name: Create containers secrets
+      include: tasks/create_container_secrets.yml
+      loop: "{{ groups['containers'] }}"
+      when: item == ansible_limit
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Call add_host.py
+      command: "./add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
+      loop: "{{ groups['containers'] }}"
+      when: item == ansible_limit
+
+- hosts: hypervisors
+  tasks:
+    - name: Create containers
+      include: tasks/create_container.yml
+      loop: "{{ groups['containers'] }}"
+      when: item == ansible_limit
+
+- hosts: containers
+  tasks:
+
+    - name: Setup the containers system
+      include_role:
+        name: "{{ role }}"
+        tasks_from: system
+
+- hosts: backup
+  tasks:
+    - name: Setup backup account
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+      when: item == ansible_limit
+
+- hosts: monitoring
+  tasks:
+    - name: Setup monitoring
+      meta: noop
+      loop: "{{ groups['containers'] }}"
+      when: item == ansible_limit
+
+...

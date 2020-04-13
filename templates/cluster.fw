@@ -7,3 +7,7 @@ enable: 1
 {% for ip in management_ips %}
 {{ ip }}
 {% endfor %}
+
+[RULES]
+
+IN ACCEPT -dest {{ public_ip }} -p tcp -dport 80 -log nolog # letsencrypt challenge

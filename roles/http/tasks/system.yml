@@ -2,6 +2,10 @@
 - name: Install nginx
   apk:
     name: nginx
+
+- name: Install bash
+  apk:
+    name: bash
 - name: Install openssl
   apk:
     name: openssl
@@ -30,17 +34,57 @@
     group: nginx
     remote_src: yes
 
-- name: Create config for Let’s Encrypt challenges
+- name: Create Let's Encrypt challenge config
+  copy:
+    src: "files/letsencrypt.conf"
+    dest: /etc/nginx/letsencrypt.conf
+    remote_src: no
+
+- name: Create sites configs (HTTP only)
   debug:
     msg: TODO
+
+# - name: Create config for Let’s Encrypt challenges
+#   debug:
+#     msg: TODO
 
 - name: Start nginx
   service:
     name: nginx
     state: started
     runlevel: default
+
 - name: Reload nginx config
   service:
     name: nginx
     state: reloaded
+
+- name: Create SSL mountpoint
+  file:
+    path: /home/user-data/ssl
+    state: directory
+
+- name: Create SSL certs dir
+  file:
+    path: /etc/ssl/letsencrypt
+    state: directory
+
+- name: Copy copy-certs script
+  copy:
+    src: files/copy-certs.sh
+    dest: /root/copy-certs.sh
+    remote_src: no
+    mode: 0700
+
+- name: Create cron task for copy-certs
+  cron:
+    name: "Copy SSL certs"
+    minute: "0"
+    hour: "0,12"
+    job: "bash /root/copy-certs.sh"
+
+- name: Create SSL challenges dir
+  file:
+    path: /var/letsencrypt/docroot
+    state: directory
 ...

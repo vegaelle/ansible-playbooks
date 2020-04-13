@@ -30,16 +30,15 @@
 
 - name: Create Let’s Encrypt dir
   file:
-    path: /etc/ssl/letsencrypt
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl/lets_encrypt/webroot"
     state: directory
 
 # - name: Bind-mount Let’s Encrypt dirs
 #   mount:
-#     src: "/{{ zfs_volumes[mailinabox.ctid].pool }}/subvol-{{ mailinabox.ctid }}-disk-0/home/user-data/ssl/"
-#     path: "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/ssl/letsencrypt"
+#     src: "/var/containers/miab/home/user-data/ssl/"
+#     path: "/var/containers/http/home/user-data/ssl"
 #     opts: bind
 #     fstype: none
 #     state: mounted
-#   when: "mailinabox.ctid"  # FIXME
 ...
 

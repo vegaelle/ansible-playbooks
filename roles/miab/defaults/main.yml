@@ -7,10 +7,17 @@ memory: 2048
 swap: 1024
 firewall_file: firewall.j2
 redirected_ports:
-  - 25
-  - 53
-  - 587
-  - 953
-  - 993
-  - 995
-  - 4190
+  - value: 25
+    proto: tcp
+  - value: 53
+    proto: udp
+  - value: 587
+    proto: tcp
+  - value: 953
+    proto: tcp
+  - value: 993
+    proto: tcp
+  - value: 995
+    proto: tcp
+  - value: 4190
+    proto: tcp

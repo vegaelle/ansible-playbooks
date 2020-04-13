@@ -40,6 +40,31 @@
       command: "pct stop {{ ctid }}"
       when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
 
+    - name: Delete HTTP config
+      file:
+        path: "/var/containers/http/etc/nginx/conf.d/10.{{ ctid }}.conf"
+        state: absent
+      when: host_vars.role != 'http'
+
+    - name: Reload nginx
+      command: "pct exec 100 /etc/init.d/nginx reload"
+      ignore_errors: true
+      when: host_vars.role != 'http'
+
+    - name: Umount public dir
+      debug:
+        msg: TODO
+
+    - name: Umount certs dir
+      command: "umount /var/containers/http/home/user-data/ssl"
+      ignore_errors: true
+      when: host_vars.role in ('http', 'miab')
+
+    - name: Umount challenges dir
+      command: "umount /var/containers/http/var/letsencrypt/docroot"
+      ignore_errors: true
+      when: host_vars.role in ('http', 'miab')
+
     - name: Delete container
       command:
         cmd: "pct destroy {{ ctid }}"
@@ -83,6 +108,17 @@
     - name: Remove ports redirections configs
       shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
 
+    - name: Remove symlink
+      file:
+        path: "/var/containers/{{ host }}"
+        state: absent
+
+    - name: Remove role symlink
+      file:
+        path: "/var/containers/{{ host_vars.role }}"
+        state: absent
+      when: "host_vars.role in ('miab', 'http')"
+
 - name: Remove backup account
   hosts: backup
   tasks:
@@ -107,15 +143,15 @@
     - name: Remove DNS entries
       meta: noop
 
-- name: Setup front server
-  hosts: http
-  tasks:
-    - name: Remove virtualhost
-      meta: noop
-      notify: Reload HTTP server
-  handlers:
-    - name: Reload HTTP server
-      meta: noop
+# - name: Setup front server
+#   hosts: http
+#   tasks:
+#     - name: Remove virtualhost
+#       meta: noop
+#       notify: Reload HTTP server
+#   handlers:
+#     - name: Reload HTTP server
+#       meta: noop
 ...
 
 
