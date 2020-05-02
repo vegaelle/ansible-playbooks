@@ -1,6 +1,0 @@
----
-dependencies:
-  - role: r1
-    vars:
-      test: r2
-...
