@@ -8,6 +8,10 @@ server {
     server_name  {{ item }};
 
     include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
 }
 
 server {
@@ -15,7 +19,7 @@ server {
     listen [::]:443 ssl;
     server_name {{ item }};
 
-    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
+    ssl_certificate    /etc/ssl/letsencrypt/ssl_certificate.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
 
 

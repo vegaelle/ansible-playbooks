@@ -46,15 +46,15 @@
     block: "{{ lookup('file', './files/interfaces') }}"
   register: bridge_task
 
-- name: Prepare networking for included files
-  file:
-    path: /etc/network/ports.d/post-up
-    state: directory
+# - name: Prepare networking for included files
+#   file:
+#     path: /etc/network/ports.d/post-up
+#     state: directory
 
-- name: Prepare networking for included files
-  file:
-    path: /etc/network/ports.d/post-down
-    state: directory
+# - name: Prepare networking for included files
+#   file:
+#     path: /etc/network/ports.d/post-down
+#     state: directory
 
 - name: Activate bridge
   shell: "ifdown vmbr1; sleep 1; ifup vmbr1"

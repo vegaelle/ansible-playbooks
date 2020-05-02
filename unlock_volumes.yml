@@ -27,6 +27,10 @@
       include: tasks/unlock_volume.yml
       loop: "{{ groups['containers'] }}"
 
+    - name: Load firewall rules
+      shell: "bash /etc/network/ports.d/post-up/*.conf"
+
+
     - name: Create bind-mount for SSL certs
       command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
 

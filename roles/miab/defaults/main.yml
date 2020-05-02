@@ -11,6 +11,8 @@ redirected_ports:
     proto: tcp
   - value: 53
     proto: udp
+  - value: 53
+    proto: tcp
   - value: 587
     proto: tcp
   - value: 953

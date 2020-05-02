@@ -9,7 +9,7 @@
   remote_user: root
   vars_prompt:
     - name: "host"
-      prompt: "what is the container ID to delete"
+      prompt: "what is the container domain to delete?"
       private: no
 
   tasks:
@@ -80,7 +80,7 @@
 
     - name: Remove ZFS volume
       command:
-        cmd: "zfs destroy {{ host_vars['pool'] }}"
+        cmd: "zfs destroy -r {{ host_vars['pool'] }}"
         removes: "/rpool/data/encrypted-{{ ctid }}"
 
     # - name: Remove firewall rules
@@ -102,11 +102,11 @@
         state: absent
       when: "vlan_uses.stdout|int >= 1"
 
-    - name: Remove ports redirections
-      shell: "grep -R {{ host }} /etc/network/ports.d/post-down | awk -F '{ print $1 }' | xargs bash; :"
+    # - name: Remove ports redirections
+    #   shell: "grep -R {{ host }} /etc/network/ports.d/post-down | awk -F '{ print $1 }' | xargs bash; :"
 
-    - name: Remove ports redirections configs
-      shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
+    # - name: Remove ports redirections configs
+    #   shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
 
     - name: Remove symlink
       file:

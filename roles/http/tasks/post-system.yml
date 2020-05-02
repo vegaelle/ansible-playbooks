@@ -10,7 +10,7 @@
     src: templates/vhost_{{ hostvars[item].role }}.j2
     dest: "/etc/nginx/conf.d/10.{{ item }}.conf"
   loop: "{{ groups['containers'] }}"
-  when: "item != inventory_hostname"
+  when: "item != inventory_hostname and hostvars[item].role != 'firewall'"
 
 - name: Create docroot dirs
   file:
@@ -19,6 +19,16 @@
   loop: "{{ groups['containers'] }}"
   when: "item != inventory_hostname"
 
+- name: Copy private key
+  # command: "bash /root/copy-certs.sh"
+  copy:
+    src: /home/user-data/ssl/ssl_private_key.pem
+    dest: /etc/ssl/letsencrypt/ssl_private_key.pem
+    remote_src: yes
+
 - name: Copy certs
-  command: "bash /root/copy-certs.sh"
+  copy:
+    src: /home/user-data/ssl/ssl_certificate.pem
+    dest: /etc/ssl/letsencrypt/ssl_certificate.pem
+    remote_src: yes
 ...

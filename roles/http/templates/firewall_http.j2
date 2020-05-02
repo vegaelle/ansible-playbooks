@@ -8,3 +8,5 @@ enable: 1
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog
 {% endfor %}
 IN ACCEPT -i net0 -source 10.0.{{ vlan }}.1
+IN ACCEPT -source {{ firewall_ip }} -p icmp # accept ping from firewall
+IN ACCEPT -i net0 -source 10.0.0.100 # accept connections from gateway

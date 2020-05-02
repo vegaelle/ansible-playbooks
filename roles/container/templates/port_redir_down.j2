@@ -1,2 +1,7 @@
+
+{% for port in redirected_ports %}
 # Remove redirect port {{ port.value }} ({{ port.proto }}) to {{ item }} ({{ ctid }})
-iptables -t nat -D PREROUTING -i vmbr0 -p {{ port.proto }} --dport {{ port.value }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}
+iptables -t nat -D PREROUTING -p {{ port.proto }} --dport {{ port.value }} -j DNAT --to 10.0.{{ vlan }}.{{ ctid }}
+# iptables -t nat -D POSTROUTING -s 10.0.0.0/16 -d 10.0.{{ vlan  }}.{{ ctid }} -p {{ port.proto }} --dport {{ port.value }} -j MASQUERADE
+iptables -t nat -D OUTPUT -d 10.0.{{ vlan }}.{{ ctid }} -p {{ port.proto }} --dport {{ port.value }} -j DNAT --to-destination {{ public_ip }}
+{% endfor %}

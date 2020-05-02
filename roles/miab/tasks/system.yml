@@ -11,6 +11,12 @@
       LC_CTYPE: en_US.UTF-8
       LANGUAGE: en_US.UTF-8
 
+- name: Ensure that password authentication is disabled
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#(PasswordAuthentication) yes$"
+    replace: "\\1 no"
+
 - name: update system
   apt:
     upgrade: dist

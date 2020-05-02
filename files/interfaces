@@ -8,11 +8,4 @@ iface vmbr1 inet static
     bridge-vlan-aware yes
     bridge-vids 2-4094
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
-    post-up iptables -t nat -A POSTROUTING -s '10.0.0.0/16' -o vmbr0 -j MASQUERADE
-    post-down iptables -t nat -D POSTROUTING -s '10.0.0.0/16' -o vmbr0 -j MASQUERADE
-    post-up iptables -t raw -A PREROUTING -i fwbr+ -j CT --zone 1
-    post-down iptables -t raw -D PREROUTING -i fwbr+ -j CT --zone 1
-    post-up bash /etc/network/ports.d/post-up/*.conf
-    post-down bash /etc/network/ports.d/post-down/*.conf
-
-source /etc/network/interfaces.d/*.conf
+    post-up echo 1 > /proc/sys/net/ipv4/conf/enp3s0.1/proxy_arp

@@ -6,6 +6,29 @@
   include_role:
     name: container
     tasks_from: container
+
+- name: Install vlan in container
+  command: "pct exec {{ ctid }} /sbin/apk add vlan"
+
+- name: Create vlan interfaces
+  blockinfile:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
+    block: |
+      {% for host in groups['containers'] %}
+      {% if hostvars[host].vlan != '0' %}
+      auto eth1.{{ hostvars[host].vlan }}
+      iface eth1.{{ hostvars[host].vlan }} inet static
+          address 10.0.{{ hostvars[host].vlan }}.{{ ctid }}
+          netmask 255.255.255.0
+
+      {% endif %}
+      {% endfor %}
+  register: bridge_task
+
+- name: Restart container networking to enable vlans
+  command: "pct exec {{ ctid }} /etc/init.d/networking restart"
+  when: bridge_task.changed
+
 - name: Create public dir
   file:
     path: /srv/public
@@ -23,7 +46,12 @@
 
 - name: Create Let’s Encrypt dir
   file:
-    path: /etc/ssl/letsencrypt
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
+    state: directory
+
+- name: Create Let’s Encrypt challenge dir
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/var/letsencrypt/docroot"
     state: directory
 
 # - name: Bind-mount Let’s Encrypt dirs

@@ -5,6 +5,38 @@
     vlan_iface: "vmbr1.{{ vlan }}"
     ip: "10.0.{{ vlan }}.{{ ctid }}"
 
+- name: Get firewall IP
+  set_fact:
+    firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+  when: hostvars[node].role == 'firewall'
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: node
+
+- name: Get firewall public IP
+  set_fact:
+    firewall_public_ip: "{{ hostvars[node].public_ip }}"
+  when: hostvars[node].role == 'firewall'
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: node
+
+- name: Get firewall gateway
+  set_fact:
+    firewall_gateway: "{{ hostvars[node].gateway }}"
+  when: hostvars[node].role == 'firewall'
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: node
+
+- name: Get firewall mac
+  set_fact:
+    firewall_mac: "{{ hostvars[node].mac }}"
+  when: hostvars[node].role == 'firewall'
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: node
+
 - name: Get reverse proxy IP
   set_fact:
     reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
@@ -37,9 +69,9 @@
     cmd: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
 
-- name: Create VLAN
-  include: vlan.yml
-  when: "vlan != '0'"
+# - name: Create VLAN
+#   include: vlan.yml
+#   when: "vlan != '0'"
 
 - name: Create container  # WARN: can’t process CT update yet
   command:
@@ -52,7 +84,8 @@
       - "--cpuunits={{ cpu_units }}"
       - "--hostname={{ main_domain }}"
       - "--memory={{ memory }}"
-      - "--net0=name=eth0,bridge=vmbr1,firewall=1,gw=10.0.{{ vlan }}.1,ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %}"
+      - "{% if role == 'firewall' %}--net0=name=eth0,bridge=vmbr0,firewall=0,gw={{ firewall_gateway }},ip={{ firewall_public_ip }}/32,hwaddr={{ firewall_mac }}{% else %}--net0=name=eth0,bridge=vmbr1,firewall=1,gw={{ firewall_ip }},ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %}{% endif %}"
+      - "{% if role == 'firewall' %}--net1=name=eth1,bridge=vmbr1,firewall=0,gw=10.0.{{ vlan }}.1,ip=10.0.0.{{ ctid }}/16{% else %}--console=1{% endif %}"
       - "--onboot=0"
       - "--ostype={{ ostype }}"
       - "--rootfs=volume=root-{{ ctid }}:subvol-{{ ctid }}-disk-0,size={{ disk_size }}"
@@ -66,6 +99,7 @@
     src: "{{ firewall_file }}"
     dest: "/root/tmp-{{ ctid }}.fw"
     owner: root
+  when: role != 'firewall'
 
 - name: Copy firewall rules
   # copy:
@@ -73,40 +107,38 @@
   #   src: "/root/tmp/{{ ctid }}.fw"
   #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
   command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
+  when: role != 'firewall'
 
 - name: Remove tmp file
   file:
     path: "/root/tmp-{{ ctid }}.fw"
     state: absent
+  when: role != 'firewall'
 
-- name: "Add port redirections"
-  template:
-    src: port_redir_up.j2
-    dest: "/etc/network/ports.d/post-up/{{ port.value }}.conf"
-  loop: "{{ redirected_ports }}"
-  loop_control:
-    loop_var: port
+# TODO: move redirections in firewall container definition
 
-- name: "Add port redirections"
-  template:
-    src: port_redir_down.j2
-    dest: "/etc/network/ports.d/post-down/{{ port.value }}.conf"
-  loop: "{{ redirected_ports }}"
-  loop_control:
-    loop_var: port
+# - name: "Add port redirections"
+#   template:
+#     src: port_redir_up.j2
+#     dest: "/etc/network/ports.d/post-up/{{ ctid }}.conf"
 
-- name: Enable port redirections
-  iptables:
-    table: nat
-    chain: PREROUTING
-    in_interface: vmbr0
-    protocol: "{{ port.proto }}"
-    destination_port: "{{ port.value }}"
-    jump: DNAT
-    to_destination: "10.0.{{ vlan }}.{{ ctid }}"
-  loop: "{{ redirected_ports }}"
-  loop_control:
-    loop_var: port
+# - name: "Add port redirections"
+#   template:
+#     src: port_redir_down.j2
+#     dest: "/etc/network/ports.d/post-down/{{ ctid }}.conf"
+
+# - name: Enable port redirections
+#   iptables:
+#     table: nat
+#     chain: PREROUTING
+#     in_interface: vmbr0
+#     protocol: "{{ port.proto }}"
+#     destination_port: "{{ port.value }}"
+#     jump: DNAT
+#     to_destination: "10.0.{{ vlan }}.{{ ctid }}"
+#   loop: "{{ redirected_ports }}"
+#   loop_control:
+#     loop_var: port
 
 
 - name: Get container state

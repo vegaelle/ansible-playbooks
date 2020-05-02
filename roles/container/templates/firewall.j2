@@ -11,8 +11,9 @@ log_level_in: nolog
 {% for port in redirected_ports %}
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog # redirection for port {{ port.value }} ({{ port.proto }})
 {% endfor %}
+IN ACCEPT -source {{ firewall_ip }} -p icmp # accept ping from firewall
 IN ACCEPT -source {{ reverse_proxy_ip }} -p icmp # accept ping from reverse proxy
-IN ACCEPT -i net0 -source 10.0.{{ vlan }}.1 # accept connections from gateway
+IN ACCEPT -i net0 -source 10.0.0.100 # accept connections from gateway
 IN ACCEPT -i net0 -source {{ reverse_proxy_ip }} -dest {{ ip }} -p tcp -dport 8000 # accept incoming connections on 8000 by reverse proxy
 IN ACCEPT -i net0 -dest 10.0.{{ vlan }}.0/24
 OUT ACCEPT -i net0 -dest 10.0.{{ vlan }}.0/24
