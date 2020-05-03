@@ -35,10 +35,14 @@
     remote_src: yes
 
 - name: Create Let's Encrypt challenge config
-  copy:
-    src: "files/letsencrypt.conf"
+  template:
+    src: "templates/letsencrypt.conf"
     dest: /etc/nginx/letsencrypt.conf
-    remote_src: no
+
+- name: Create Let's Encrypt challenge config 2
+  template:
+    src: "templates/00-letsencrypt.conf"
+    dest: /etc/nginx/conf.d/00-letsencrypt.conf
 
 - name: Create sites configs (HTTP only)
   debug:
@@ -83,8 +87,22 @@
     hour: "0,12"
     job: "bash /root/copy-certs.sh"
 
-- name: Create SSL challenges dir
-  file:
-    path: /var/letsencrypt/docroot
-    state: directory
+# - name: Create SSL challenges dir
+#   file:
+#     path: /var/letsencrypt/docroot
+#     state: directory
+
+- name: Install nfs
+  apk:
+    name: nfs-utils
+
+- name: Install rpcbind
+  apk:
+    name: rpcbind
+
+- name: Set up NFS mounts
+  template:
+    src: templates/fstab
+    dest: /etc/fstab
+
 ...

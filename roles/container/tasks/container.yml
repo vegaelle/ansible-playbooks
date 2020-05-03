@@ -5,46 +5,6 @@
     vlan_iface: "vmbr1.{{ vlan }}"
     ip: "10.0.{{ vlan }}.{{ ctid }}"
 
-- name: Get firewall IP
-  set_fact:
-    firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
-  when: hostvars[node].role == 'firewall'
-  loop: "{{ groups['containers'] }}"
-  loop_control:
-    loop_var: node
-
-- name: Get firewall public IP
-  set_fact:
-    firewall_public_ip: "{{ hostvars[node].public_ip }}"
-  when: hostvars[node].role == 'firewall'
-  loop: "{{ groups['containers'] }}"
-  loop_control:
-    loop_var: node
-
-- name: Get firewall gateway
-  set_fact:
-    firewall_gateway: "{{ hostvars[node].gateway }}"
-  when: hostvars[node].role == 'firewall'
-  loop: "{{ groups['containers'] }}"
-  loop_control:
-    loop_var: node
-
-- name: Get firewall mac
-  set_fact:
-    firewall_mac: "{{ hostvars[node].mac }}"
-  when: hostvars[node].role == 'firewall'
-  loop: "{{ groups['containers'] }}"
-  loop_control:
-    loop_var: node
-
-- name: Get reverse proxy IP
-  set_fact:
-    reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
-  when: hostvars[node].role == 'http'
-  loop: "{{ groups['containers'] }}"
-  loop_control:
-    loop_var: node
-
 - name: Create ZFS volume
   command: "zfs create -o encryption=on -o keyformat=passphrase {{ zfs_volume }}"
   args:
@@ -91,8 +51,51 @@
       - "--rootfs=volume=root-{{ ctid }}:subvol-{{ ctid }}-disk-0,size={{ disk_size }}"
       - "--start=0"
       - "--swap={{ swap }}"
+      - "--features"
+      - "mount=nfs,nesting=1"
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/bin"
 
+- name: Copy CT conf file
+  command: "cp /etc/pve/lxc/{{ ctid }}.conf /root/tmp-{{ ctid }}.conf"
+  when: ostype == 'alpine'
+
+# thanks to https://unix.stackovernet.com/fr/q/108786
+- name: Fix pcap for front
+  blockinfile:
+    path: "/root/tmp-{{ ctid }}.conf"
+    block: |
+      # clear cap.drop 
+      lxc.cap.drop: 
+
+      # copy drop list from /usr/share/lxc/config/common.conf 
+      lxc.cap.drop = mac_admin mac_override sys_time sys_module sys_rawio 
+
+      # copy drop list from /usr/share/lxc/config/alpine.common.conf with setpcap commented 
+
+      lxc.cap.drop = audit_write 
+      lxc.cap.drop = ipc_owner 
+      lxc.cap.drop = mknod 
+      # lxc.cap.drop = setpcap 
+      lxc.cap.drop = sys_nice 
+      lxc.cap.drop = sys_pacct 
+      lxc.cap.drop = sys_ptrace 
+      lxc.cap.drop = sys_rawio 
+      lxc.cap.drop = sys_resource 
+      lxc.cap.drop = sys_tty_config 
+      lxc.cap.drop = syslog 
+      lxc.cap.drop = wake_alarm 
+
+  when: ostype == 'alpine'
+
+- name: Copy CT conf file back
+  command: "cp /root/tmp-{{ ctid }}.conf /etc/pve/lxc/{{ ctid }}.conf"
+  when: ostype == 'alpine'
+
+- name: Remove tmp file
+  file:
+    path: "/root/tmp-{{ ctid }}.conf"
+    state: absent
+  when: ostype == 'alpine'
 
 - name: Add firewall rules
   template:

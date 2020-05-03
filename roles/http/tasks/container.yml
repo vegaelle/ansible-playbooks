@@ -16,8 +16,8 @@
     block: |
       {% for host in groups['containers'] %}
       {% if hostvars[host].vlan != '0' %}
-      auto eth1.{{ hostvars[host].vlan }}
-      iface eth1.{{ hostvars[host].vlan }} inet static
+      auto eth0.{{ hostvars[host].vlan }}
+      iface eth0.{{ hostvars[host].vlan }} inet static
           address 10.0.{{ hostvars[host].vlan }}.{{ ctid }}
           netmask 255.255.255.0
 
@@ -49,10 +49,10 @@
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
     state: directory
 
-- name: Create Let’s Encrypt challenge dir
-  file:
-    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/var/letsencrypt/docroot"
-    state: directory
+# - name: Create Let’s Encrypt challenge dir
+#   file:
+#     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/var/letsencrypt/docroot"
+#     state: directory
 
 # - name: Bind-mount Let’s Encrypt dirs
 #   mount:

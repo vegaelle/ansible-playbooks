@@ -27,6 +27,36 @@
       set_fact:
         ctid: "{{ host_vars['ctid'] }}"
 
+    - name: Get firewall facts
+      set_fact:
+        firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        firewall_public_ip: "{{ hostvars[node].public_ip }}"
+        firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_mac: "{{ hostvars[node].mac }}"
+      when: hostvars[node].role == 'firewall'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'http'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get mailinabox facts
+      set_fact:
+        miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        miab_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'miab'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+
     - name: Check if CT still exists
       shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ ctid }}.conf | wc -l"
       register: config_exists
@@ -47,23 +77,23 @@
       when: host_vars.role != 'http'
 
     - name: Reload nginx
-      command: "pct exec 100 /etc/init.d/nginx reload"
+      command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx reload"
       ignore_errors: true
       when: host_vars.role != 'http'
 
-    - name: Umount public dir
-      debug:
-        msg: TODO
+    # - name: Umount public dir
+    #   debug:
+    #     msg: TODO
 
-    - name: Umount certs dir
-      command: "umount /var/containers/http/home/user-data/ssl"
-      ignore_errors: true
-      when: host_vars.role in ('http', 'miab')
+    # - name: Umount certs dir
+    #   command: "umount /var/containers/http/home/user-data/ssl"
+    #   ignore_errors: true
+    #   when: host_vars.role in ('http', 'miab')
 
-    - name: Umount challenges dir
-      command: "umount /var/containers/http/var/letsencrypt/docroot"
-      ignore_errors: true
-      when: host_vars.role in ('http', 'miab')
+    # - name: Umount challenges dir
+    #   command: "umount /var/containers/http/var/letsencrypt/docroot"
+    #   ignore_errors: true
+    #   when: host_vars.role in ('http', 'miab')
 
     - name: Delete container
       command:

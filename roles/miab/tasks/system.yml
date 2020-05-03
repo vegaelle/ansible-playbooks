@@ -66,6 +66,28 @@
   ignore_errors: true
   loop: "{{ groups['containers'] }}"
 
+- name: Setup NFS firewall rules
+  blockinfile:
+    path: "/etc/ufw/user.rules"
+    block: |
+      ### tuple ### allow tcp 111 0.0.0.0/0 any 0.0.0.0/0 in
+      -A ufw-user-input -p tcp --dport 111 -j ACCEPT
+
+      ### tuple ### allow udp 111 0.0.0.0/0 any 0.0.0.0/0 in
+      -A ufw-user-input -p udp --dport 111 -j ACCEPT
+      #
+      ### tuple ### allow tcp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+      -A ufw-user-input -p tcp --dport 2049 -j ACCEPT
+
+      ### tuple ### allow udp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+      -A ufw-user-input -p udp --dport 2049 -j ACCEPT
+    insertbefore: "### END RULES ###"
+
+- name: Restart firewall
+  service:
+    name: ufw
+    state: restarted
+
 - name: Create challenge dir
   file:
     path: "/home/user-data/ssl/lets_encrypt/webroot"
@@ -78,5 +100,19 @@
 # - name: Debug
   # debug:
   #   msg: "stdout: \n{{ ssl_certificates.stdout }}\n\nstderr: \n{{ ssl_certificates.stderr }}"
+
+- name: Install nfs
+  apt:
+    name: nfs-kernel-server
+
+- name: Set up NFS mounts
+  template:
+    src: templates/exports
+    dest: /etc/exports
+
+- name: Start nfs
+  service:
+    name: nfs-kernel-server
+    state: restarted
 
 ...

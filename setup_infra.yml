@@ -19,15 +19,44 @@
     - name: Setup hypervisor
       include: tasks/setup_hypervisor.yml
 
+    - name: Get firewall facts
+      set_fact:
+        firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        firewall_public_ip: "{{ hostvars[node].public_ip }}"
+        firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_mac: "{{ hostvars[node].mac }}"
+      when: hostvars[node].role == 'firewall'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'http'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get mailinabox facts
+      set_fact:
+        miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        miab_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'miab'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
     - name: Create containers
       include: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
 
-    - name: Create bind-mount for SSL certs
-      command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
+    # - name: Create bind-mount for SSL certs
+    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
 
-    - name: Create bind-mount for Let’s Encrypt challenges
-      command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
+    # - name: Create bind-mount for Let’s Encrypt challenges
+    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
 
     # - name: Create bind-mount for SSL certs
     #   # command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
@@ -51,6 +80,34 @@
 
 - hosts: containers
   tasks:
+    - name: Get firewall facts
+      set_fact:
+        firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        firewall_public_ip: "{{ hostvars[node].public_ip }}"
+        firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_mac: "{{ hostvars[node].mac }}"
+      when: hostvars[node].role == 'firewall'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'http'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get mailinabox facts
+      set_fact:
+        miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        miab_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'miab'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
 
     - name: Setup the containers system
       include_role:

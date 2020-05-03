@@ -12,12 +12,18 @@
   loop: "{{ groups['containers'] }}"
   when: "item != inventory_hostname and hostvars[item].role != 'firewall'"
 
-- name: Create docroot dirs
-  file:
-    path: "/var/www/{{ item }}/docroot"
-    state: directory
-  loop: "{{ groups['containers'] }}"
-  when: "item != inventory_hostname"
+# - name: Create docroot dirs
+#   file:
+#     path: "/var/www/{{ item }}/docroot"
+#     state: directory
+#   loop: "{{ groups['containers'] }}"
+#   when: "item != inventory_hostname"
+
+- name: Enable nfsmount
+  service:
+    name: nfsmount
+    state: started
+    runlevel: default
 
 - name: Copy private key
   # command: "bash /root/copy-certs.sh"
@@ -31,4 +37,9 @@
     src: /home/user-data/ssl/ssl_certificate.pem
     dest: /etc/ssl/letsencrypt/ssl_certificate.pem
     remote_src: yes
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
 ...

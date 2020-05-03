@@ -65,8 +65,8 @@
     src: templates/cluster.fw
     dest: /etc/pve/firewall/cluster.fw
 
-- name: Create directory for container links
-  file:
-    path: "/var/containers"
-    state: directory
+# - name: Create directory for container links
+#   file:
+#     path: "/var/containers"
+#     state: directory
 ...

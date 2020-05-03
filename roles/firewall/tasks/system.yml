@@ -1,0 +1,15 @@
+---
+- name: Install fail2ban
+  apk:
+    name: fail2ban
+
+- name: Start fail2ban
+  service:
+    name: fail2ban
+    state: started
+    runlevel: default
+
+# - name: Install ssh-honeypot
+#   apk:
+#     name: ssh-honeypot
+...

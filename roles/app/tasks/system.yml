@@ -1,0 +1,16 @@
+---
+- name: Install nfs
+  apk:
+    name: nfs-utils
+
+- name: Set up NFS mounts
+  template:
+    src: templates/exports
+    dest: /etc/exports
+
+- name: Start nfs
+  service:
+    name: nfs
+    state: started
+    runlevel: default
+...

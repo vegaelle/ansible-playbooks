@@ -23,20 +23,33 @@
     #   #   msg: "pct start {{ item.1.ctid }}"
     #   loop: "{{ zfs_volumes | get_containers }}"
 
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'http'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
     - name: Unlock container
       include: tasks/unlock_volume.yml
       loop: "{{ groups['containers'] }}"
 
-    - name: Load firewall rules
-      shell: "bash /etc/network/ports.d/post-up/*.conf"
+    # - name: Load firewall rules
+    #   shell: "bash /etc/network/ports.d/post-up/*.conf"
 
+    - name: Start NFS mounts
+      command: "pct enter {{ reverse_proxy_ctid }} /etc/init.d/nfsmount start"
 
-    - name: Create bind-mount for SSL certs
-      command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
+    # - name: Create bind-mount for SSL certs
+    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
 
-    - name: Create bind-mount for Let’s Encrypt challenges
-      command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
+    # - name: Create bind-mount for Let’s Encrypt challenges
+    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
 
-    - name: Start nginx
-      command: "pct exec 100 /etc/init.d/nginx start"
+    # - name: Start nginx
+    #   command: "pct exec {{ item }} /etc/init.d/nginx start"
+    #   loop: "{{ groups[containers] }}"
+    #   when: "hostvars[item].role == 'http'"
 ...

@@ -8,6 +8,11 @@ log_level_in: nolog
 
 [RULES]
 
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p tcp -dport 111 -log nolog # rpc
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport 111 -log nolog # rpc
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p tcp -dport 2049 -log nolog # mountd
+IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport 2049 -log nolog # mountd
+
 {% for port in redirected_ports %}
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog # redirection for port {{ port.value }} ({{ port.proto }})
 {% endfor %}
