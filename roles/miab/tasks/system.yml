@@ -47,7 +47,9 @@
     remote_src: no
 
 - name: Reboot
-  command: reboot
+  command: 
+    cmd: reboot
+    creates: /root/mailinabox
 
 - name: Wait for host to get up again
   wait_for_connection:
@@ -61,9 +63,23 @@
   debug:
     msg: "Mailinabox is installed. You can use the admin account me@{{ inventory_hostname }}."
 
-- name: Setup DNS and certs for containers
-  shell: "/root/mailinabox/tools/mail.py alias add administrator@{{ item }} administrator@{{ inventory_hostname }}"
-  ignore_errors: true
+# - name: Setup DNS and certs for containers
+#   shell: "/root/mailinabox/tools/mail.py alias add administrator@{{ item }} administrator@{{ inventory_hostname }}"
+#   ignore_errors: true
+#   loop: "{{ groups['containers'] }}"
+
+- name: Setup DNS, mail and certs for containers
+  command: 
+    argv: 
+      - "curl"
+      - "--user"
+      - "me@{{ inventory_hostname }}:{{ miab_pw }}"
+      - "-d"
+      - "email=system@{{ item }}"
+      - "-d"
+      - "password={{ mail_account_passphrase }}"
+      - "https://{{ inventory_hostname }}/admin/mail/users/add"
+  # ignore_errors: true
   loop: "{{ groups['containers'] }}"
 
 - name: Setup NFS firewall rules

@@ -13,6 +13,8 @@ IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport
 IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p tcp -dport 2049 -log nolog # mountd
 IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport 2049 -log nolog # mountd
 
+{% if allow_ssh %}IN ACCEPT -i net0 -p tcp --dport 22 -log nolog # allow SSH{% endif %}
+
 {% for port in redirected_ports %}
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog # redirection for port {{ port.value }} ({{ port.proto }})
 {% endfor %}

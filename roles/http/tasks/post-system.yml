@@ -23,7 +23,7 @@
   service:
     name: nfsmount
     state: started
-    runlevel: default
+    enabled: no
 
 - name: Copy private key
   # command: "bash /root/copy-certs.sh"

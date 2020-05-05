@@ -43,6 +43,7 @@
       set_fact:
         miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
         miab_ctid: "{{ hostvars[node].ctid }}"
+        miab_domain: "{{ node }}"
       when: hostvars[node].role == 'miab'
       loop: "{{ groups['containers'] }}"
       loop_control:
@@ -104,6 +105,7 @@
       set_fact:
         miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
         miab_ctid: "{{ hostvars[node].ctid }}"
+        miab_domain: "{{ node }}"
       when: hostvars[node].role == 'miab'
       loop: "{{ groups['containers'] }}"
       loop_control:

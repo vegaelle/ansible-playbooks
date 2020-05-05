@@ -9,7 +9,28 @@
     state: started
     runlevel: default
 
-# - name: Install ssh-honeypot
-#   apk:
-#     name: ssh-honeypot
+- name: Install ssh-honeypot
+  apk:
+    name: ssh-honeypot
+    repository: 
+      - http://dl-cdn.alpinelinux.org/alpine/edge/testing
+      - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
+      - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
+
+- name: Create ssh-honeypot (because alpine one is broken)
+  openssh_keypair:
+    path: /usr/share/ssh-honeypot/honeypot.rsa
+    type: rsa
+
+- name: Make ssh-honeypot run on port 22
+  copy:
+    src: files/ssh-honeypot
+    dest: /etc/conf.d/ssh-honeypot
+    remote_src: no
+
+- name: Start ssh-honeypot
+  service:
+    name: ssh-honeypot
+    state: started
+    runlevel: default
 ...

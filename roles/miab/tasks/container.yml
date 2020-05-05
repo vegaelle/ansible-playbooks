@@ -2,6 +2,7 @@
 - name: Set custom facts
   set_fact:
     firewall_file: firewall.j2
+    allow_ssh: no
     image: ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
     ostype: ubuntu
     disk_size: 128

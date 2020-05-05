@@ -13,4 +13,28 @@
     name: nfs
     state: started
     runlevel: default
+
+- name: Install opensmtpd
+  apk:
+    name: opensmtpd
+
+- name: Configure SMTP relay
+  template:
+    src: templates/smtpd.conf
+    dest: /etc/smtpd/smtpd.conf
+
+- name: Configure SMTP secrets
+  template:
+    src: templates/secrets
+    dest: /etc/smtpd/secrets
+    mode: "0640"
+
+- name: Convert secrets to db format
+  command: "makemap /etc/smtpd/secrets"
+
+- name: Start smtpd
+  service:
+    name: smtpd
+    state: started
+    runlevel: default
 ...

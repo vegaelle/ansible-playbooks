@@ -160,6 +160,18 @@
   command: "pct exec {{ ctid }} /sbin/apk add python3"
   when: "ostype == 'alpine'"
 
+- name: Install ssh in container
+  command: "pct exec {{ ctid }} /sbin/apk add openssh"
+  when: "ostype == 'alpine' and allow_ssh"
+
+- name: Start ssh in container
+  command: "pct exec {{ ctid }} /etc/init.d/sshd start"
+  when: "ostype == 'alpine' and allow_ssh"
+
+- name: Enable ssh in container
+  command: "pct exec {{ ctid }} rc-update add sshd default"
+  when: "ostype == 'alpine' and allow_ssh"
+
 - name: Create public dir in container
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"

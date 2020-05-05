@@ -9,6 +9,7 @@
     memory: 512
     swap: 512
     firewall_file: firewall.j2
+    allow_ssh: yes
     redirected_ports: []
 - name: Setup container
   include_role:

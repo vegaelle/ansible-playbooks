@@ -1,6 +1,7 @@
 ---
 - name: Set custom facts
   set_fact:
+    allow_ssh: no
     firewall_file: firewall_http.j2
 - name: Setup container
   include_role:

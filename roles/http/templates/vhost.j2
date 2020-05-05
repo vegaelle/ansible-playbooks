@@ -26,7 +26,7 @@ server {
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;
 
-    root /srv/{{ item }};
+    root /var/www/nginx/{{ item }}/docroot;
     index index.htm index.html;
 
     location / {

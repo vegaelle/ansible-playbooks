@@ -1,7 +1,7 @@
 {% for host in groups['containers'] %}
 {% if hostvars[host].role not in ('http', 'miab', 'firewall') %}
 # {{ host }}
-10.0.{{ hostvars[host].vlan }}.{{ hostvars[host].ctid }}:/var/www/{{ host }}     nfs     defaults,auto,noatime,ro,timeo=30,retrans=10  0 0
+10.0.{{ hostvars[host].vlan }}.{{ hostvars[host].ctid }}:/srv/public  /var/www/nginx/{{ host }}/docroot     nfs     defaults,auto,noatime,ro,timeo=30,retrans=10  0 0
 
 {% elif hostvars[host].role == 'miab' %}
 # Let’s Encrypt
