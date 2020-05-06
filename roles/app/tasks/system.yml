@@ -1,4 +1,14 @@
 ---
+- name: Install tzdata
+  apk:
+    name: tzdata
+
+- name: Copy timezone data
+  copy:
+    src: "/usr/share/zoneinfo/{{ timezone }}"
+    dest: /etc/localtime
+    remote_src: yes
+
 - name: Install nfs
   apk:
     name: nfs-utils
