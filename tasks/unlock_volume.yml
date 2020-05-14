@@ -21,12 +21,6 @@
   command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ctid }}-disk-0"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
-  # - name: Mount public dirs
-
-- name: Enable port redirections
-  debug:
-    msg: TODO
-
 - name: Start container
   command: "pct start {{ host_vars.ctid }}"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"

@@ -24,6 +24,9 @@
     state: started
     runlevel: default
 
+- name: Force activation of NFS service
+  command: "rc-update add nfs default"
+
 - name: Install opensmtpd
   apk:
     name: opensmtpd
@@ -39,8 +42,8 @@
     dest: /etc/smtpd/secrets
     mode: "0640"
 
-- name: Convert secrets to db format
-  command: "makemap /etc/smtpd/secrets"
+# - name: Convert secrets to db format
+#   command: "makemap /etc/smtpd/secrets"
 
 - name: Start smtpd
   service:

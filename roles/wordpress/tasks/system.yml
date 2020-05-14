@@ -1,0 +1,158 @@
+---
+- name: Setup system
+  include_role:
+    name: app_ubuntu
+    tasks_from: system
+
+- name: Install pip
+  apt:
+    name: python3-pip
+
+# - name: Create PHP user
+#   user:
+#     name: www
+#     groups: www
+#     home: /srv/public
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Install PHP packages
+  apt:
+    # name: php7-fpm,php7-mysql,php7-iconv,php7-json,php7-gd,php7-curl,php7-xml,php7-mysqli,php7-imap,php7-cgi,fcgi,php7-pdo,php7-pdo_mysql,php7-soap,php7-xmlrpc,php7-posix,php7-mcrypt,php7-gettext,php7-ldap,php7-ctype,php7-dom
+    name: php-fpm,php-curl,php-gd,php-intl,php-json,php-mbstring,php-xml,php-zip,php-mysql,php-imagick,php-apcu
+    update_cache: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+- name: Configure PHP-fpm
+  template:
+    src: templates/www.conf
+    dest: "/etc/php/7.2/fpm/pool.d/www.conf"
+
+- name: Start php-fpm
+  service:
+    name: php7.2-fpm
+    state: reloaded
+    runlevel: default
+
+- name: Install MariaDB
+  apt:
+    name: wget,mariadb-server
+
+- name: Setup MariaDB
+  command: /etc/init.d/mysql setup
+  args:
+    creates: /var/lib/mysql
+
+- name: Start MariaDB
+  service:
+    name: mysql
+    state: started
+
+- name: Install pymysql (required by ansible)
+  pip:
+    name:
+      - pymysql
+
+- name: Create database password
+  set_fact:
+
+- name: Change admin database password
+  mysql_user:
+    name: root
+    password: "{{ database_admin_password }}"
+    login_unix_socket: "/var/run/mysqld/mysqld.sock"
+
+- name: Create Mariadb conf file for root
+  template:
+    src: templates/my.cnf
+    dest: /root/.my.cnf
+    mode: 0600
+
+- name: Create database
+  mysql_db:
+    name: wordpress
+    state: present
+    login_unix_socket: "/var/run/mysqld/mysqld.sock"
+
+- name: Removes all anonymous user accounts
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+    login_unix_socket: "/var/run/mysqld/mysqld.sock"
+
+- name: Create database user
+  mysql_user:
+    name: wordpress
+    password: "{{ database_password }}"
+    priv: 'wordpress.*:ALL'
+    state: present
+    login_unix_socket: "/var/run/mysqld/mysqld.sock"
+
+- name: Get wp-cli
+  get_url:
+    url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    dest: "/opt/wp-cli"
+    force: true
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Download Wordpress
+  command: "/opt/wp-cli core download --no-color --path=/srv/public/ --locale=fr_FR"
+  args:
+    creates: /srv/public/wp-load.php
+  become: true
+  become_user: www-data
+
+- name: Setup Wordpress
+  command: >
+    /opt/wp-cli core config
+    --no-color --path=/srv/public
+    --dbname=wordpress
+    --dbuser=wordpress
+    --dbpass='{{ database_password }}'
+    --dbhost=localhost
+    --dbprefix=wp_
+  args:
+    creates: "/srv/public/wp-config.php"
+  become: true
+  become_user: www-data
+
+
+- name: Check if Wordpress is installed
+  command: "/opt/wp-cli core is-installed --path=/srv/public"
+  register: _check_installation
+  failed_when: false
+  changed_when: false
+  become: true
+  become_user: www-data
+
+- name: Install Wordpress
+  command: >
+    /opt/wp-cli core install
+    --no-color --path=/srv/public
+    --url='{{ inventory_hostname }}' --title='A New Wordpress Site'
+    --admin_name=admin
+    --admin_email='admin@{{ inventory_hostname }}'
+    --admin_password='{{ wordpress_admin_password }}'
+  when: _check_installation.rc != 0
+  become: true
+  become_user: www-data
+
+...

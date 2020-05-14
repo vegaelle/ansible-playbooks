@@ -35,6 +35,11 @@
     path: /srv/public
     state: directory
 
+- name: Create snippets subdir (for pvesm support)
+  file:
+    path: /srv/public/snippets
+    state: directory
+
 # - name: Bind-mount public dirs
 #   mount:
 #     src: "/{{ item.pool }}/subvol-{{ item.ctid }}-disk-0/srv/public"

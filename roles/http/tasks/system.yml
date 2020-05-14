@@ -49,24 +49,37 @@
     src: "templates/letsencrypt.conf"
     dest: /etc/nginx/letsencrypt.conf
 
+- name: Create global restrictions file
+  copy:
+    src: "files/restrictions.conf"
+    dest: /etc/nginx/restrictions.conf
+    remote_src: no
+
 - name: Create Let's Encrypt challenge config 2
   template:
     src: "templates/00-letsencrypt.conf"
     dest: /etc/nginx/conf.d/00-letsencrypt.conf
 
-- name: Create sites configs (HTTP only)
-  debug:
-    msg: TODO
+- name: Get certs
+  shell: "ls /etc/ssl/letsencrypt/*.pem | grep -v ssl_private_key | sed 's/.pem//'"
+  register: certs_found
 
-# - name: Create config for Let’s Encrypt challenges
-#   debug:
-#     msg: TODO
+- name: Delete config files for missing certs
+  file:
+    path: "/etc/nginx/conf.d/10.{{ item }}.conf"
+    state: absent
+  loop: "{{ groups['containers'] }}"
+  when: "item not in certs_found.stdout.split()"
 
 - name: Start nginx
   service:
     name: nginx
     state: started
     runlevel: default
+
+- name: Make nginx run at boot
+  command: "rc-update add nginx default"
+  ignore_errors: yes
 
 - name: Reload nginx config
   service:
@@ -75,8 +88,9 @@
 
 - name: Create SSL mountpoint
   file:
-    path: /home/user-data/ssl
+    path: /home/user-data/ssl/snippets
     state: directory
+    recurse: yes
 
 - name: Create SSL certs dir
   file:
@@ -102,17 +116,17 @@
 #     path: /var/letsencrypt/docroot
 #     state: directory
 
-- name: Install nfs
-  apk:
-    name: nfs-utils
+# - name: Install nfs
+#   apk:
+#     name: nfs-utils
 
-- name: Install rpcbind
-  apk:
-    name: rpcbind
+# - name: Install rpcbind
+#   apk:
+#     name: rpcbind
 
-- name: Set up NFS mounts
-  template:
-    src: templates/fstab
-    dest: /etc/fstab
+# - name: Set up NFS mounts
+#   template:
+#     src: templates/fstab
+#     dest: /etc/fstab
 
 ...

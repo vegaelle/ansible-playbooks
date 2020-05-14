@@ -69,4 +69,38 @@
 #   file:
 #     path: "/var/containers"
 #     state: directory
+
+- name: Create PVE mountpoint
+  file:
+    path: /mnt/pve
+    state: directory
+
+- name: Create PVE mountpoint for SSL
+  file:
+    path: /mnt/pve/nfs-ssl
+    state: directory
+
+# - name: Create PVE mountpoint for SSL
+#   file:
+#     path: /mnt/pve/nfs-{{ hostvars[item].ctid }}
+#     state: directory
+#   loop: "{{ groups['containers'] }}"
+
+# - name: Create NFS storages
+#   blockinfile:
+#     path: /etc/pve/storage.cfg
+#     block: "{{ lookup('template', './templates/storage.cfg') }}"
+
+# - name: Create NFS SSL storage
+#   command: "pvesm add nfs nfs-ssl --export /home/user-data/ssl --path /mnt/pve/nfs-ssl --server {{ miab_ip }} --content snippets"
+#   ignore_errors: yes
+
+# - name: Create NFS storages
+#   command: "pvesm add nfs nfs-{{ hostvars[item].ctid }} --export /srv/public --path /mnt/pve/nfs-{{ hostvars[item].ctid }} --server 10.0.{{ hostvars[item].vlan }}.{{ hostvars[item].ctid }} --content snippets"
+#   ignore_errors: yes
+#   loop: "{{ groups['containers'] }}"
+#   when: "hostvars[item].role not in ('http', 'miab', 'firewall')"
+
+# - name: Call pvesm status to enable storages
+#   command: pvesm status
 ...

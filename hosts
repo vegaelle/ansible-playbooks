@@ -6,3 +6,4 @@ fw.pycodon.fr       vlan=0          role=firewall       ansible_ssh_extra_args=1
 front.pycodon.fr     vlan=0          role=http       ansible_ssh_extra_args=101
 pycodon.fr           vlan=102        role=miab       ansible_ssh_extra_args=102
 cryptolout.re       vlan=110        role=app        ansible_ssh_extra_args=110
+test.pycodon.fr     vlan=111        role=wordpress     ansible_ssh_extra_args=111

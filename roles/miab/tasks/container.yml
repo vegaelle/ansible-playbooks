@@ -14,10 +14,63 @@
   include_role:
     name: container
     tasks_from: container
+
 - name: Create public dir
   file:
-    path: /srv/public
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl/snippets"
     state: directory
+    recurse: yes
+
+- name: Update apt
+  command: "pct exec {{ ctid }} -- apt update"
+
+- name: Install locales
+  command: "pct exec {{ ctid }} locale-gen {{ locale }}"
+  loop:
+    - en_US.UTF-8
+    - fr_FR.UTF-8
+  loop_control:
+    loop_var: locale
+
+- name: Update locale
+  command: "pct exec {{ ctid }} -- update-locale {{ locale }}=en_US.UTF-8"
+  loop:
+    - LC_ALL
+    - LANGUAGE
+    - LC_CTYPE
+  loop_control:
+    loop_var: locale
+
+- name: Fix locale config file
+  copy:
+    src: files/locale
+    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/default/locale"
+    remote_src: no
+
+- name: Stop container
+  command: "pct stop {{ ctid }}"
+
+- name: Restart container
+  command: "pct start {{ ctid }}"
+
+- name: Install nfs
+  command: "pct exec {{ ctid }} -- apt install -y nfs-kernel-server"
+
+- name: Set up NFS mounts
+  template:
+    src: templates/exports
+    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/exports"
+
+- name: Start nfs
+  command: "pct exec {{ ctid }} -- systemctl reload nfs-kernel-server"
+
+- name: Check if NFS storage exists
+  shell: "pvesm status | grep nfs-ssl | wc -l"
+  register: storage_exists
+
+- name: Create NFS SSL storage
+  command: "pvesm add nfs nfs-ssl --export /home/user-data/ssl --path /mnt/pve/nfs-ssl --server 10.0.{{ vlan }}.{{ ctid }} --content snippets"
+  when: storage_exists.stdout == '0'
 
 # - name: Bind-mount public dirs
 #   mount:
@@ -41,5 +94,26 @@
 #     opts: bind
 #     fstype: none
 #     state: mounted
+
+- name: Get front container state
+  shell: "pct list | grep {{ reverse_proxy_ctid }} | awk '{print $2}'"
+  register: front_container_running
+
+- name: Stop nginx in front container
+  command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx stop"
+  ignore_errors: yes
+  when: "front_container_running.stdout == 'running'"
+
+- name: Stop front container (to apply mountpoint config)
+  command: "pct stop {{ reverse_proxy_ctid }}"
+  when: "front_container_running.stdout == 'running'"
+
+- name: Set SSL mountpoints
+  command: "pct set {{ reverse_proxy_ctid }} -mp0 /mnt/pve/nfs-ssl,mp=/home/user-data/ssl"
+
+- name: Start front container
+  command: "pct start {{ reverse_proxy_ctid }}"
+  ignore_errors: yes
+  when: "front_container_running.stdout == 'running'"
 ...
 

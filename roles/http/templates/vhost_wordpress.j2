@@ -22,15 +22,33 @@ server {
     ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
 
+    client_max_body_size 13m;
 
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;
 
     root /var/www/vhosts/{{ item }};
-    index index.htm index.html;
+    index index.php index.htm index.html;
+
+    add_header Content-Security-Policy "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';" always;
 
     location / {
-        proxy_pass http://{{ item }}-upstream/;
+        # This is cool because no php is touched for static content.
+        # include the "?$args" part so non-default permalinks doesn't break when using query string
+        try_files $uri $uri/ /index.php?$args;
     }
-}
 
+    location ~ \.php$ {
+        root /srv/public;
+        fastcgi_intercept_errors on;
+        include           fastcgi.conf;
+        fastcgi_pass      {{ item }}-upstream;
+        fastcgi_index     index.php;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+        expires max;
+        log_not_found off;
+    }
+
+}

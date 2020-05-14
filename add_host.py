@@ -25,6 +25,9 @@ def main():
         'vlan': host_vars['vlan'],
     }
 
+    for k, v in host_vars['extra_secrets'].items():
+        volume_data[k] = v
+
     vault = ansible_vault.Vault(os.environ.get('ANSIBLE_VAULT_PASSWORD'))
     if not os.path.isdir(f'host_vars/{host}'):
         os.mkdir(f'host_vars/{host}')

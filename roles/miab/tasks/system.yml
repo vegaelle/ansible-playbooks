@@ -2,6 +2,7 @@
 - name: Set Mailinabox env vars
   set_fact:
     miab_env:
+      DISABLE_FIREWALL: 1
       NONINTERACTIVE: 1
       PRIMARY_HOSTNAME: "{{ inventory_hostname }}"
       EMAIL_ADDR: "me@{{ inventory_hostname }}"
@@ -26,38 +27,44 @@
   apt:
     name: curl
 
-- name: Install locales
-  locale_gen:
-    name: "{{ item }}"
-  loop:
-    - en_US.UTF-8
-    - fr_FR.UTF-8
+# - name: Install locales
+#   locale_gen:
+#     name: "{{ item }}"
+#   loop:
+#     - en_US.UTF-8
+#     - fr_FR.UTF-8
 
-- name: Set default locale
-  command: "update-locale {{ item }}=en_US.UTF-8"
-  loop:
-    - LC_ALL
-    - LANGUAGE
-    - LC_CTYPE
+# - name: Set default locale
+#   command: "update-locale {{ item }}=en_US.UTF-8"
+#   loop:
+#     - LC_ALL
+#     - LANGUAGE
+#     - LC_CTYPE
 
-- name: Fix locale config file
-  copy:
-    src: files/locale
-    dest: /etc/default/locale
-    remote_src: no
+# - name: Fix locale config file
+#   copy:
+#     src: files/locale
+#     dest: /etc/default/locale
+#     remote_src: no
 
-- name: Reboot
-  command: 
-    cmd: reboot
-    creates: /root/mailinabox
+# - name: Reboot
+#   shell:
+#     cmd: "systemctl stop nfs-kernel-server && reboot"
+#     creates: /root/mailinabox
 
-- name: Wait for host to get up again
-  wait_for_connection:
-    timeout: 60
+# - name: Wait for host to get up again
+#   wait_for_connection:
+#     timeout: 60
 
 - name: Install Mailinabox
   shell: "curl -s https://mailinabox.email/setup.sh | bash"
   environment: "{{ miab_env }}"
+
+- name: Create public dir
+  file:
+    path: /home/user-data/ssl/snippets
+    state: directory
+    recurse: yes
 
 - name: Print info messages
   debug:
@@ -67,49 +74,50 @@
 #   shell: "/root/mailinabox/tools/mail.py alias add administrator@{{ item }} administrator@{{ inventory_hostname }}"
 #   ignore_errors: true
 #   loop: "{{ groups['containers'] }}"
-
-- name: Setup DNS, mail and certs for containers
-  command: 
-    argv: 
-      - "curl"
-      - "--user"
-      - "me@{{ inventory_hostname }}:{{ miab_pw }}"
-      - "-d"
-      - "email=system@{{ item }}"
-      - "-d"
-      - "password={{ mail_account_passphrase }}"
-      - "https://{{ inventory_hostname }}/admin/mail/users/add"
-  # ignore_errors: true
-  loop: "{{ groups['containers'] }}"
-
-- name: Setup NFS firewall rules
-  blockinfile:
-    path: "/etc/ufw/user.rules"
-    block: |
-      ### tuple ### allow tcp 111 0.0.0.0/0 any 0.0.0.0/0 in
-      -A ufw-user-input -p tcp --dport 111 -j ACCEPT
-
-      ### tuple ### allow udp 111 0.0.0.0/0 any 0.0.0.0/0 in
-      -A ufw-user-input -p udp --dport 111 -j ACCEPT
-      #
-      ### tuple ### allow tcp 2049 0.0.0.0/0 any 0.0.0.0/0 in
-      -A ufw-user-input -p tcp --dport 2049 -j ACCEPT
-
-      ### tuple ### allow udp 2049 0.0.0.0/0 any 0.0.0.0/0 in
-      -A ufw-user-input -p udp --dport 2049 -j ACCEPT
-    insertbefore: "### END RULES ###"
-
-- name: Restart firewall
-  service:
-    name: ufw
-    state: restarted
-
 - name: Create challenge dir
   file:
     path: "/home/user-data/ssl/lets_encrypt/webroot"
     state: directory
 
-- name: Generate SSL certificates
+# - name: Generate SSL certificates
+#   command: "/root/mailinabox/management/ssl_certificates.py"
+
+# insecure in case we hit the Lets Encrypt rate limiting
+- name: Setup DNS, mail and certs for containers
+  command: >
+      curl --insecure -X POST --user "me@{{ inventory_hostname }}:{{ miab_pw }}"
+      -d "email=system@{{ item }}"
+      -d "password={{ mail_account_passphrase }}"
+      "https://{{ inventory_hostname }}/admin/mail/users/add"
+  # ignore_errors: true
+  loop: "{{ groups['containers'] }}"
+
+#- name: Setup NFS firewall rules
+#  blockinfile:
+#    path: "/etc/ufw/user.rules"
+#    block: |
+#      ### tuple ### allow 10.0.0.1/32 any 0.0.0.0/0 in
+#      -A ufw-user-input -s 10.0.0.1/32 -j ACCEPT
+
+#      ### tuple ### allow tcp 111 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p tcp --dport 111 -j ACCEPT
+
+#      ### tuple ### allow udp 111 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p udp --dport 111 -j ACCEPT
+#      #
+#      ### tuple ### allow tcp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p tcp --dport 2049 -j ACCEPT
+
+#      ### tuple ### allow udp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p udp --dport 2049 -j ACCEPT
+#    insertbefore: "### END RULES ###"
+
+#- name: Restart firewall
+#  service:
+#    name: ufw
+#    state: restarted
+
+- name: Generate new SSL certificates
   command: "/root/mailinabox/management/ssl_certificates.py"
   # register: ssl_certificates
 
@@ -117,18 +125,18 @@
   # debug:
   #   msg: "stdout: \n{{ ssl_certificates.stdout }}\n\nstderr: \n{{ ssl_certificates.stderr }}"
 
-- name: Install nfs
-  apt:
-    name: nfs-kernel-server
+# - name: Install nfs
+#   apt:
+#     name: nfs-kernel-server
 
-- name: Set up NFS mounts
-  template:
-    src: templates/exports
-    dest: /etc/exports
+# - name: Set up NFS mounts
+#   template:
+#     src: templates/exports
+#     dest: /etc/exports
 
-- name: Start nfs
-  service:
-    name: nfs-kernel-server
-    state: restarted
+# - name: Start nfs
+#   service:
+#     name: nfs-kernel-server
+#     state: restarted
 
 ...

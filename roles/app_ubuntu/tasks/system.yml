@@ -1,0 +1,79 @@
+---
+- name: Copy timezone data
+  copy:
+    src: "/usr/share/zoneinfo/{{ timezone }}"
+    dest: /etc/localtime
+    remote_src: yes
+
+- name: Install nfs
+  apt:
+    name: nfs-kernel-server
+    update_cache: yes
+
+- name: Set up NFS mounts
+  template:
+    src: templates/exports
+    dest: /etc/exports
+
+- name: Disable firewall
+  command: "ufw disable"
+#- name: Setup NFS firewall rules
+#  blockinfile:
+#    path: "/etc/ufw/user.rules"
+#    block: |
+#      ### tuple ### allow tcp 111 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p tcp --dport 111 -j ACCEPT
+
+#      ### tuple ### allow udp 111 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p udp --dport 111 -j ACCEPT
+#      #
+#      ### tuple ### allow tcp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p tcp --dport 2049 -j ACCEPT
+
+#      ### tuple ### allow udp 2049 0.0.0.0/0 any 0.0.0.0/0 in
+#      -A ufw-user-input -p udp --dport 2049 -j ACCEPT
+#    insertbefore: "### END RULES ###"
+
+## - name: Enable firewall
+##   command: "ufw enable"
+
+#- name: Restart firewall
+#  service:
+#    name: ufw
+#    state: restarted
+
+- name: Start nfs
+  service:
+    name: nfs-kernel-server
+    state: started
+    runlevel: default
+
+- name: Install opensmtpd
+  apt:
+    name: opensmtpd
+
+- name: Configure SMTP relay
+  template:
+    src: templates/smtpd.conf
+    dest: /etc/smtpd.conf
+
+- name: Create smtpd directory
+  file:
+    path: /etc/smtpd
+    state: directory
+
+- name: Configure SMTP secrets
+  template:
+    src: templates/secrets
+    dest: /etc/smtpd/secrets
+    mode: "0640"
+
+# - name: Convert secrets to db format
+#   command: "makemap /etc/smtpd/secrets"
+
+- name: Start smtpd
+  service:
+    name: opensmtpd
+    state: started
+    runlevel: default
+...

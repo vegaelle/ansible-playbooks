@@ -1,7 +1,7 @@
 auto vmbr1
 iface vmbr1 inet static
     address  10.0.0.1
-    netmask  16
+    netmask  32
     bridge-ports enp3s0.1
     bridge-stp off
     bridge-fd 0
@@ -9,3 +9,5 @@ iface vmbr1 inet static
     bridge-vids 2-4094
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
     post-up echo 1 > /proc/sys/net/ipv4/conf/enp3s0.1/proxy_arp
+    post-up ip r a 10.0.0.100 dev vmbr1
+    post-up ip r a 10.0.0.0/16 via 10.0.0.100 dev vmbr1

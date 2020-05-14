@@ -16,8 +16,6 @@
 
 - hosts: hypervisors
   tasks:
-    - name: Setup hypervisor
-      include: tasks/setup_hypervisor.yml
 
     - name: Get firewall facts
       set_fact:
@@ -48,6 +46,9 @@
       loop: "{{ groups['containers'] }}"
       loop_control:
         loop_var: node
+
+    - name: Setup hypervisor
+      include: tasks/setup_hypervisor.yml
 
     - name: Create containers
       include: tasks/create_container.yml

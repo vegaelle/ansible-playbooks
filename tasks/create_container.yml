@@ -9,6 +9,7 @@
     backup_passphrase: "{{ hostvars[item].backup_passphrase }}"
     role: "{{ hostvars[item].role }}"
     zfs_volume: "{{ hostvars[item].pool }}"
+    inventory_index: "{{ groups['containers'].index(item) }}"
 - name: Include role
   include_role:
     name: "{{ host.role }}"

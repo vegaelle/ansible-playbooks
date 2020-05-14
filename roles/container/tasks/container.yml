@@ -59,8 +59,18 @@
   command: "cp /etc/pve/lxc/{{ ctid }}.conf /root/tmp-{{ ctid }}.conf"
   when: ostype == 'alpine'
 
+# - name: Create mountpoint for front
+#   blockinfile:
+#     path: "/root/tmp-{{ ctid }}.conf"
+#     block: |
+#       mp0: /mnt/pve/,mp=/var/www/vhosts
+#       mp1: /mnt/pve/nfs-ssl,mp=/home/user-data/ssl:
+#     marker: "# {mark} ANSIBLE MANAGED BLOCK FRONT MOUNTPOINTS"
+#   when: role == 'http'
+#   register: 'mountpoints_changed'
+
 # thanks to https://unix.stackovernet.com/fr/q/108786
-- name: Fix pcap for front
+- name: Fix pcap for alpine
   blockinfile:
     path: "/root/tmp-{{ ctid }}.conf"
     block: |
@@ -164,6 +174,10 @@
   command: "pct exec {{ ctid }} /sbin/apk add openssh"
   when: "ostype == 'alpine' and allow_ssh"
 
+- name: Install ssh in container
+  command: "pct exec {{ ctid }} -- /usr/bin/apt install -y openssh-server"
+  when: "ostype == 'ubuntu' and allow_ssh"
+
 - name: Start ssh in container
   command: "pct exec {{ ctid }} /etc/init.d/sshd start"
   when: "ostype == 'alpine' and allow_ssh"
@@ -175,6 +189,12 @@
 - name: Create public dir in container
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+    state: directory
+  when: role != 'http'
+
+- name: Create snippets subdir (for pvesm support)
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/snippets"
     state: directory
   when: role != 'http'
 

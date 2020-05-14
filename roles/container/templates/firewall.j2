@@ -8,10 +8,10 @@ log_level_in: nolog
 
 [RULES]
 
-IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p tcp -dport 111 -log nolog # rpc
-IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport 111 -log nolog # rpc
-IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p tcp -dport 2049 -log nolog # mountd
-IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport 2049 -log nolog # mountd
+IN ACCEPT -i net0 -p tcp -dport 111 -log nolog # rpc
+IN ACCEPT -i net0 -p udp -dport 111 -log nolog # rpc
+IN ACCEPT -i net0 -p tcp -dport 2049 -log nolog # mountd
+IN ACCEPT -i net0 -p udp -dport 2049 -log nolog # mountd
 
 {% if allow_ssh %}IN ACCEPT -i net0 -p tcp --dport 22 -log nolog # allow SSH{% endif %}
 
@@ -19,6 +19,7 @@ IN ACCEPT -i net0 -source 10.0.{{ vlan }}.{{ reverse_proxy_ctid }} -p udp -dport
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog # redirection for port {{ port.value }} ({{ port.proto }})
 {% endfor %}
 IN ACCEPT -source {{ firewall_ip }} -p icmp # accept ping from firewall
+IN ACCEPT -source 10.0.0.1 -p icmp # accept ping from hypervisor
 IN ACCEPT -source {{ reverse_proxy_ip }} -p icmp # accept ping from reverse proxy
 IN ACCEPT -i net0 -source 10.0.0.100 # accept connections from gateway
 IN ACCEPT -i net0 -source {{ reverse_proxy_ip }} -dest {{ ip }} -p tcp -dport 8000 # accept incoming connections on 8000 by reverse proxy

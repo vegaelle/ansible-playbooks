@@ -5,7 +5,7 @@ upstream {{ item }}-upstream {
 server {
     listen 80;
     listen [::]:80;
-    server_name  {{ item }};
+    server_name {{ item }} autoconfig.{{ item }} autodiscover.{{ item }};
 
     include letsencrypt.conf;
 
@@ -17,17 +17,17 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name {{ item }};
+    server_name {{ item }} autoconfig.{{ item }} autodiscover.{{ item }};
     add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
 
-    ssl_certificate    /etc/ssl/letsencrypt/ssl_certificate.pem;
+    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
 
 
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;
 
-    root /var/www/nginx/{{ item }}/docroot;
+    root /var/www/vhosts/{{ item }};
     index index.htm index.html;
 
     location / {
@@ -35,3 +35,39 @@ server {
     }
 }
 
+{% for host in groups['containers'] %}
+{% if hostvars[host].role not in ('http', 'miab', 'firewall') %}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name autoconfig.{{ host }} autodiscover.{{ host }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name autoconfig.{{ host }} autodiscover.{{ host }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ host }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass https://{{ item }}-upstream/;
+    }
+}
+{% endif %}
+{% endfor %}

@@ -1,17 +1,16 @@
 ---
 - name: Set custom facts
   set_fact:
-    image: alpine-3.10-default_20190626_amd64.tar.xz
-    ostype: alpine
+    image: ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
+    ostype: ubuntu
     disk_size: 8
     cpu_cores: 1
     cpu_units: 1024
     memory: 512
     swap: 512
     firewall_file: firewall.j2
-    allow_ssh: yes
+    allow_ssh: no
     redirected_ports: []
-
 - name: Setup container
   include_role:
     name: container
@@ -23,11 +22,11 @@
     state: directory
     recurse: yes
 
-- name: Update apk
-  command: "pct exec {{ ctid }} -- apk update"
+- name: Update apt
+  command: "pct exec {{ ctid }} -- apt update"
 
 - name: Install nfs
-  command: "pct exec {{ ctid }} -- apk add nfs-utils"
+  command: "pct exec {{ ctid }} -- apt install -y nfs-kernel-server"
 
 - name: Set up NFS mounts
   template:
@@ -35,10 +34,7 @@
     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/exports"
 
 - name: Start nfs
-  command: "pct exec {{ ctid }} -- /etc/init.d/nfs start"
-
-- name: Enable nfs at boot
-  command: "pct exec {{ ctid }} -- rc-update add nfs default"
+  command: "pct exec {{ ctid }} -- systemctl reload nfs-kernel-server"
 
 - name: Check if NFS storage exists
   shell: "pvesm status | grep nfs-{{ ctid }} | wc -l"
@@ -69,5 +65,4 @@
   command: "pct start {{ reverse_proxy_ctid }}"
   ignore_errors: yes
   when: "front_container_running.stdout == 'running'"
-
 ...

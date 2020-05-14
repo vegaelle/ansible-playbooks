@@ -39,8 +39,8 @@
     # - name: Load firewall rules
     #   shell: "bash /etc/network/ports.d/post-up/*.conf"
 
-    - name: Start NFS mounts
-      command: "pct enter {{ reverse_proxy_ctid }} /etc/init.d/nfsmount start"
+    # - name: Start NFS mounts
+    #   command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nfsmount start"
 
     # - name: Create bind-mount for SSL certs
     #   command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
@@ -48,8 +48,6 @@
     # - name: Create bind-mount for Let’s Encrypt challenges
     #   command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
 
-    # - name: Start nginx
-    #   command: "pct exec {{ item }} /etc/init.d/nginx start"
-    #   loop: "{{ groups[containers] }}"
-    #   when: "hostvars[item].role == 'http'"
+    - name: Start nginx
+      command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx start"
 ...
