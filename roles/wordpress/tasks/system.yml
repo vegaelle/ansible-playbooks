@@ -147,7 +147,7 @@
   command: >
     /opt/wp-cli core install
     --no-color --path=/srv/public
-    --url='{{ inventory_hostname }}' --title='A New Wordpress Site'
+    --url='https://{{ inventory_hostname }}' --title='A New Wordpress Site'
     --admin_name=admin
     --admin_email='admin@{{ inventory_hostname }}'
     --admin_password='{{ wordpress_admin_password }}'

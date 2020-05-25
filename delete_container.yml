@@ -184,6 +184,15 @@
         cmd: "pct destroy {{ ctid }}"
         removes: "/etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ ctid }}.conf"
 
+    - name: Remove cron tasks
+      cron:
+        name: "{{ cron_name }}"
+        state: absent
+      loop:
+        - "Backups for {{ host }}"
+        - "Snapshot for {{ host }}"
+        - "Snapshot prune for {{ host }}"
+
     - name: Check if storage still exists
       shell: "pvesm status | grep root-{{ ctid }} | wc -l"
       register: storage_exists

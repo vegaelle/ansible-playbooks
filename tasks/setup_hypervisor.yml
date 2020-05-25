@@ -46,16 +46,6 @@
     block: "{{ lookup('file', './files/interfaces') }}"
   register: bridge_task
 
-# - name: Prepare networking for included files
-#   file:
-#     path: /etc/network/ports.d/post-up
-#     state: directory
-
-# - name: Prepare networking for included files
-#   file:
-#     path: /etc/network/ports.d/post-down
-#     state: directory
-
 - name: Activate bridge
   shell: "ifdown vmbr1; sleep 1; ifup vmbr1"
   when: bridge_task.changed
@@ -64,11 +54,6 @@
   template:
     src: templates/cluster.fw
     dest: /etc/pve/firewall/cluster.fw
-
-# - name: Create directory for container links
-#   file:
-#     path: "/var/containers"
-#     state: directory
 
 - name: Create PVE mountpoint
   file:
@@ -80,27 +65,32 @@
     path: /mnt/pve/nfs-ssl
     state: directory
 
-# - name: Create PVE mountpoint for SSL
-#   file:
-#     path: /mnt/pve/nfs-{{ hostvars[item].ctid }}
-#     state: directory
-#   loop: "{{ groups['containers'] }}"
+- name: Install borgbackup
+  apt:
+    name: borgbackup
 
-# - name: Create NFS storages
-#   blockinfile:
-#     path: /etc/pve/storage.cfg
-#     block: "{{ lookup('template', './templates/storage.cfg') }}"
+- name: Install pip3
+  apt:
+    name: python3-pip
 
-# - name: Create NFS SSL storage
-#   command: "pvesm add nfs nfs-ssl --export /home/user-data/ssl --path /mnt/pve/nfs-ssl --server {{ miab_ip }} --content snippets"
-#   ignore_errors: yes
+- name: Install borgmatic
+  pip:
+    executable: pip3
+    name: borgmatic
 
-# - name: Create NFS storages
-#   command: "pvesm add nfs nfs-{{ hostvars[item].ctid }} --export /srv/public --path /mnt/pve/nfs-{{ hostvars[item].ctid }} --server 10.0.{{ hostvars[item].vlan }}.{{ hostvars[item].ctid }} --content snippets"
-#   ignore_errors: yes
-#   loop: "{{ groups['containers'] }}"
-#   when: "hostvars[item].role not in ('http', 'miab', 'firewall')"
+- name: Install backup SSH keys
+  known_hosts:
+    name: "{{ item }}"
+    key: "{{ item }} {{ hostvars[item + '-ssh'].public_ssh_key }}"
+  loop: "{{ groups['backup'] }}"
 
-# - name: Call pvesm status to enable storages
-#   command: pvesm status
+- name: Copy backup helper scripts
+  copy:
+    src: "files/{{ item }}-script"
+    dest: "/usr/sbin/{{ item }}"
+    mode: 0755
+    remote_src: no
+  loop:
+    - backup
+    - backup-mount
 ...

@@ -61,7 +61,9 @@
     dest: /etc/nginx/conf.d/00-letsencrypt.conf
 
 - name: Get certs
-  shell: "ls /etc/ssl/letsencrypt/*.pem | grep -v ssl_private_key | sed 's/.pem//'"
+  shell: "ls *.pem | grep -v ssl_private_key | sed 's/.pem//'"
+  args:
+    chdir: "/etc/ssl/letsencrypt"
   register: certs_found
 
 - name: Delete config files for missing certs

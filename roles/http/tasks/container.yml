@@ -40,33 +40,9 @@
     path: /srv/public/snippets
     state: directory
 
-# - name: Bind-mount public dirs
-#   mount:
-#     src: "/{{ item.pool }}/subvol-{{ item.ctid }}-disk-0/srv/public"
-#     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/{{ item.ctid }}"
-#     opts: bind
-#     fstype: none
-#     state: mounted
-#   loop: "{{ groups['containers'] }}"
-#   when: "item.ctid != ctid"
-
 - name: Create Let’s Encrypt dir
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
     state: directory
-
-# - name: Create Let’s Encrypt challenge dir
-#   file:
-#     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/var/letsencrypt/docroot"
-#     state: directory
-
-# - name: Bind-mount Let’s Encrypt dirs
-#   mount:
-#     src: "/{{ zfs_volumes[mailinabox.ctid].pool }}/subvol-{{ mailinabox.ctid }}-disk-0/home/user-data/ssl/"
-#     path: "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/ssl/letsencrypt"
-#     opts: bind
-#     fstype: none
-#     state: mounted
-#   when: "mailinabox.ctid"  # FIXME
 ...
 

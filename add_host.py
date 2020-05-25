@@ -21,6 +21,8 @@ def main():
         'domain': domain,
         'passphrase': host_vars['zfs_volume_passphrase'],
         'backup_passphrase': host_vars['backup_passphrase'],
+        'backup_ssh_key': host_vars['backup_ssh_key'],
+        'backup_ssh_pub_key': host_vars['backup_ssh_pub_key'],
         'mail_account_passphrase': host_vars['mail_account_passphrase'],
         'vlan': host_vars['vlan'],
     }

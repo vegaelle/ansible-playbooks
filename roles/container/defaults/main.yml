@@ -7,3 +7,4 @@ memory: 512
 swap: 512
 allow_ssh: no
 firewall_file: firewall.j2
+borgmatic_config_file: borgmatic.j2

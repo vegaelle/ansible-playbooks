@@ -1,0 +1,36 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: $0 <container_id>" >&2
+  exit 1
+}
+
+die() {
+  echo "$0: $*" >&2
+  exit 1
+}
+
+[[ $# == 1 ]] || usage
+
+current_dir=$(pwd)
+ctid=$1
+zfs_volume=/$(grep -A1 "zfspool: root-$ctid" /etc/pve/storage.cfg | tail -n 1 | cut -c 7-)
+borgmatic_config=$zfs_volume/.backups/borgmatic.conf
+last_archive=$(/usr/local/bin/borgmatic -c $borgmatic_config list 2>&1 | tail -n 1 | awk '{ print $1 }')
+
+/usr/local/bin/borgmatic -c $borgmatic_config mount --archive $last_archive --mount-point $zfs_volume/snapshot
+
+cd "$zfs_volume/snapshot$zfs_volume/snapshot/"
+
+export prompt="\e[31m(backup-$ctid)\e[39m"
+export CT_ROOT=$zfs_volume/subvol-$ctid-disk-0
+
+echo -e "\e[1mThe archive is mounted, and you've been placed in its root. When you're finished, just exit the shell."
+echo -e "For your convenience, the variable CT_ROOT has been set and contains the path to the container filesystem root.\e[0m}"
+
+bash --rcfile <(cat ~/.bashrc; echo "PS1='$prompt \\u@\\h:\\w\$ '")
+
+echo "Unmounting backup archive..."
+
+cd $current_dir
+/usr/local/bin/borgmatic -c $borgmatic_config umount --mount-point $zfs_volume/snapshot

@@ -24,14 +24,55 @@
     cmd: "pvesm add zfspool root-{{ ctid }} --pool {{ zfs_volume }}"
   when: storage_exists.stdout == '0'
 
+- name: Create snapshot mountpoint
+  file:
+    path: "/{{ zfs_volume }}/snapshot"
+    state: directory
+
 - name: Create ZFS disk volume
   command:
     cmd: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
 
-# - name: Create VLAN
-#   include: vlan.yml
-#   when: "vlan != '0'"
+- name: Create backups conf dir
+  file:
+    path: "/{{ zfs_volume }}/.backups"
+    state: directory
+
+- name: Copy backup SSH key
+  copy:
+    content: "{{ backup_ssh_key }}"
+    dest: "/{{ zfs_volume }}/.backups/{{ item }}-backup"
+    mode: "0600"
+
+- name: Create Borg configuration
+  template:
+    src: "{{ borgmatic_config_file }}"
+    dest: "/{{ zfs_volume }}/.backups/borgmatic.conf"
+
+- name: Initiate backup
+  command: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf init -e repokey"
+  register: borgmatic_init
+
+- name: Create snapshot cron task
+  cron:
+    name: "Snapshot for {{ item }}"
+    minute: "{{ inventory_index }}"
+    job: "bash -c \"/usr/sbin/zfs snapshot {{ zfs_volume }}/subvol-{{ ctid }}-disk-0@`date +\\%Y-\\%m-\\%d-\\%H-\\%M-\\%S`\""
+
+- name: Create snapshot prune cron task
+  cron:
+    name: "Snapshot prune for {{ item }}"
+    minute: "5"
+    hour: "23"
+    job: "bash -c \"/usr/sbin/zfs list -t snapshot -H -S creation -o name {{ zfs_volume }}/subvol-{{ ctid }}-disk-0 | tail -n +25 | xargs /usr/sbin/zfs destroy\""
+
+- name: Create backup cron task
+  cron:
+    name: "Backups for {{ item }}"
+    minute: "10"
+    hour: "{{ ( inventory_index|int ) + 2 }}"
+    job: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf"
 
 - name: Create container  # WARN: can’t process CT update yet
   command:
@@ -128,32 +169,6 @@
     state: absent
   when: role != 'firewall'
 
-# TODO: move redirections in firewall container definition
-
-# - name: "Add port redirections"
-#   template:
-#     src: port_redir_up.j2
-#     dest: "/etc/network/ports.d/post-up/{{ ctid }}.conf"
-
-# - name: "Add port redirections"
-#   template:
-#     src: port_redir_down.j2
-#     dest: "/etc/network/ports.d/post-down/{{ ctid }}.conf"
-
-# - name: Enable port redirections
-#   iptables:
-#     table: nat
-#     chain: PREROUTING
-#     in_interface: vmbr0
-#     protocol: "{{ port.proto }}"
-#     destination_port: "{{ port.value }}"
-#     jump: DNAT
-#     to_destination: "10.0.{{ vlan }}.{{ ctid }}"
-#   loop: "{{ redirected_ports }}"
-#   loop_control:
-#     loop_var: port
-
-
 - name: Get container state
   shell: "pct list | grep {{ ctid }} | awk '{print $2}'"
   register: container_running
@@ -165,6 +180,10 @@
 - name: Update container packages
   command: "pct exec {{ ctid }} /sbin/apk update"
   when: "ostype == 'alpine'"
+
+- name: Update container packages
+  command: "pct exec {{ ctid }} /usr/bin/apt update"
+  when: "ostype == 'ubuntu'"
 
 - name: Install Python3 in container
   command: "pct exec {{ ctid }} /sbin/apk add python3"
@@ -197,13 +216,4 @@
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/snippets"
     state: directory
   when: role != 'http'
-
-# - name: Mount public dir
-#   mount:
-#     src: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
-#     path: "/{{ zfs_volumes[reverse_proxy.ctid].pool }}/subvol-{{ reverse_proxy.ctid }}-disk-0/srv/public/{{ ctid }}"
-#     opts: bind
-#     fstype: none
-#     state: mounted
-#   when: role != 'http'
 ...

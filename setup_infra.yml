@@ -1,4 +1,26 @@
 ---
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Create tmp dir
+      file:
+        path: "tmp"
+        state: directory
+    - name: Create SSH backup keys
+      command:
+        argv:
+          - "ssh-keygen"
+          - "-n"
+          - ""
+          - "-C"
+          - "{{ item }}@{{ item }}"
+          - "-m"
+          - "PEM"
+          - "-f"
+          - "tmp/{{ item }}-backup"
+      ignore_errors: yes
+      loop: "{{ groups['containers'] }}"
+      when: hostvars[item].backup_ssh_key is not defined
 - hosts: hypervisors
   tasks:
     - name: Create containers secrets
@@ -13,6 +35,45 @@
     - name: Call add_host.py
       command: "./add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
       loop: "{{ groups['containers'] }}"
+    - name: Remove tmp dir
+      file:
+        path: tmp
+        state: absent
+
+- hosts: backup
+  tasks:
+    - name: Update the system
+      apt:
+        upgrade: dist
+        update_cache: yes
+
+    - name: Get SSH public key for server
+      shell: "cat /etc/ssh/ssh_host_ecdsa_key.pub | awk -F ' ' '{ print $1 \" \" $2 }'"
+      register: "public_ssh_key"
+
+    - name: Create temporary backup host
+      add_host:
+        name: "{{ inventory_hostname }}-ssh"
+        public_ssh_key: "{{ public_ssh_key.stdout }}"
+
+    - name: Install borgbackup
+      apt:
+        name: borgbackup
+
+    - name: Setup backup account
+      user:
+        name: "{{ item }}"
+        shell: "/bin/bash"
+      loop: "{{ groups['containers'] }}"
+
+    - name: Install SSH key in authorized_keys
+      authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ hostvars[item].backup_ssh_pub_key }}"
+        key_options: 'command="cd /home/{{ item }}/{{ item }}; borg serve --restrict-to-path /home/{{ item }}/{{ item }}",no-port-forwarding,no-x11-forwarding,no-pty,no-agent-forwarding,no-user-rc'
+      loop: "{{ groups['containers'] }}"
+
 
 - hosts: hypervisors
   tasks:
@@ -53,32 +114,6 @@
     - name: Create containers
       include: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
-
-    # - name: Create bind-mount for SSL certs
-    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
-
-    # - name: Create bind-mount for Let’s Encrypt challenges
-    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
-
-    # - name: Create bind-mount for SSL certs
-    #   # command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
-    #   mount:
-    #     src: "/var/containers/miab/home/user-data/ssl"
-    #     path: "/var/containers/http/home/user-data/ssl"
-    #     opts: bind
-    #     fstype: none
-    #     state: mounted
-    #     fstab: /dev/null
-
-    # - name: Create bind-mount for Let’s Encrypt challenges
-    #   # command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
-    #   mount:
-    #     src: "/var/containers/miab/home/user-data/ssl/lets_encrypt/webroot"
-    #     path: "/var/containers/http/var/letsencrypt/docroot"
-    #     opts: bind
-    #     fstype: none
-    #     state: mounted
-    #     fstab: /dev/null
 
 - hosts: containers
   tasks:
@@ -122,36 +157,9 @@
         name: "{{ role }}"
         tasks_from: post-system
 
-- hosts: backup
-  tasks:
-    - name: Setup backup account
-      meta: noop
-      loop: "{{ groups['containers'] }}"
-
 - hosts: monitoring
   tasks:
     - name: Setup monitoring
       meta: noop
       loop: "{{ groups['containers'] }}"
-
-# - name: Setup DNS
-#   hosts: dns
-#   tasks:
-#     - name: Add DNS entries
-#       meta: noop
-#       loop: "{{ groups['containers'] }}"
-#     - name: Provision certificate
-#       meta: noop
-#       loop: "{{ groups['containers'] }}"
-
-# - name: Setup front server
-#   hosts: http
-#   tasks:
-#     - name: Add virtualhost
-#       meta: noop
-#       loop: "{{ groups['containers'] }}"
-#       notify: Reload HTTP server
-#   handlers:
-#     - name: Reload HTTP server
-#       meta: noop
 ...

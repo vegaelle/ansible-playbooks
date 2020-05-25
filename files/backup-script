@@ -1,0 +1,21 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: $0 <container_id> [borgmatic_arguments...]" >&2
+  exit 1
+}
+
+die() {
+  echo "$0: $*" >&2
+  exit 1
+}
+
+[[ "$#" -ge "1" ]] || usage
+
+ctid=$1
+zfs_volume=/$(grep -A1 "zfspool: root-$ctid" /etc/pve/storage.cfg | tail -n 1 | cut -c 7-)
+borgmatic_config=$zfs_volume/.backups/borgmatic.conf
+
+shift
+
+/usr/local/bin/borgmatic -c $borgmatic_config $@
