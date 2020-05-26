@@ -1,4 +1,9 @@
 ---
+- name: update system
+  apt:
+    upgrade: dist
+    update_cache: yes
+
 - name: Copy timezone data
   copy:
     src: "/usr/share/zoneinfo/{{ timezone }}"

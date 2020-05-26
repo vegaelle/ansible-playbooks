@@ -1,4 +1,9 @@
 ---
+- name: Upgrade system
+  apk:
+    upgrade: yes
+    update_cache: yes
+
 - name: Install tzdata
   apk:
     name: tzdata
