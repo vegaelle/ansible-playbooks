@@ -65,7 +65,7 @@
     name: "Snapshot prune for {{ item }}"
     minute: "5"
     hour: "23"
-    job: "bash -c \"/usr/sbin/zfs list -t snapshot -H -S creation -o name {{ zfs_volume }}/subvol-{{ ctid }}-disk-0 | tail -n +25 | xargs /usr/sbin/zfs destroy\""
+    job: "bash -c \"/usr/sbin/zfs list -t snapshot -H -S creation -o name {{ zfs_volume }}/subvol-{{ ctid }}-disk-0 | tail -n +25 | xargs -L 1 /usr/sbin/zfs destroy\""
 
 - name: Create backup cron task
   cron:
