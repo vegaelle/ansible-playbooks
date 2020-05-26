@@ -4,6 +4,11 @@
     path: /etc/apt/sources.list.d/pve-enterprise.list
     state: absent
 
+- name: Set DNS servers
+  template:
+    src: templates/resolv.conf
+    dest: /etc/resolv.conf
+
 - name: update system
   apt:
     upgrade: dist
