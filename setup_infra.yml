@@ -42,38 +42,21 @@
 
 - hosts: backup
   tasks:
-    - name: Update the system
-      apt:
-        upgrade: dist
-        update_cache: yes
+    - name: Setup backup servers
+      include: tasks/setup_backup.yml
 
-    - name: Get SSH public key for server
-      shell: "cat /etc/ssh/ssh_host_ecdsa_key.pub | awk -F ' ' '{ print $1 \" \" $2 }'"
-      register: "public_ssh_key"
-
-    - name: Create temporary backup host
-      add_host:
-        name: "{{ inventory_hostname }}-ssh"
-        public_ssh_key: "{{ public_ssh_key.stdout }}"
-
-    - name: Install borgbackup
-      apt:
-        name: borgbackup
-
-    - name: Setup backup account
-      user:
-        name: "{{ item }}"
-        shell: "/bin/bash"
+- hosts: monitoring
+  tasks:
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_hostname: "{{ node }}"
+      when: hostvars[node].role == 'http'
       loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
 
-    - name: Install SSH key in authorized_keys
-      authorized_key:
-        user: "{{ item }}"
-        state: present
-        key: "{{ hostvars[item].backup_ssh_pub_key }}"
-        key_options: 'command="cd /home/{{ item }}/{{ item }}; borg serve --restrict-to-path /home/{{ item }}/{{ item }}",no-port-forwarding,no-x11-forwarding,no-pty,no-agent-forwarding,no-user-rc'
-      loop: "{{ groups['containers'] }}"
-
+    - name: Setup monitoring servers
+      include: tasks/setup_monitoring.yml
 
 - hosts: hypervisors
   tasks:
@@ -93,6 +76,7 @@
       set_fact:
         reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
         reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+        reverse_proxy_hostname: "{{ node }}"
       when: hostvars[node].role == 'http'
       loop: "{{ groups['containers'] }}"
       loop_control:

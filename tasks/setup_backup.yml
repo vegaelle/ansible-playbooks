@@ -1,0 +1,190 @@
+---
+- name: Update the system
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: Ensure that password authentication is disabled
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#(PasswordAuthentication) yes$"
+    replace: "\\1 no"
+  register: sshd_config
+
+- name: Restart sshd
+  service:
+    name: ssh
+    state: restarted
+  when: sshd_config.changed
+
+- name: Install nftables
+  apt:
+    name: nftables
+
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+
+- name: Create nftables directory
+  file:
+    path: /etc/nftables
+    state: directory
+
+- name: Setup fail2ban
+  template:
+    src: templates/backup-fail2ban.conf
+    dest: /etc/nftables/fail2ban.conf
+
+- name: Setup nftables
+  template:
+    src: templates/backup-nftables.conf
+    dest: /etc/nftables/nftables.conf
+
+- name: Activate nftables
+  service:
+    name: nftables
+    state: started
+
+- name: Reload nftables
+  service:
+    name: nftables
+    state: reloaded
+
+- name: Get SSH public key for server
+  shell: "cat /etc/ssh/ssh_host_ecdsa_key.pub | awk -F ' ' '{ print $1 \" \" $2 }'"
+  register: "public_ssh_key"
+
+- name: Save SSH public key in host
+  set_fact:
+    ssh_public_key: "{{ public_ssh_key.stdout }}"
+
+- name: Create temporary backup host
+  add_host:
+    name: "{{ item }}-ssh"
+    public_ssh_key: "{{ hostvars[item].ssh_public_key }}"
+  loop: "{{ groups['backup'] }}"
+
+- name: Install borgbackup
+  apt:
+    name: borgbackup
+
+- name: Setup backup account
+  user:
+    name: "{{ item }}"
+    shell: "/bin/bash"
+  loop: "{{ groups['containers'] }}"
+
+- name: Install SSH key in authorized_keys
+  authorized_key:
+    user: "{{ item }}"
+    state: present
+    key: "{{ hostvars[item].backup_ssh_pub_key }}"
+    key_options: 'command="cd /home/{{ item }}; borg serve --restrict-to-path /home/{{ item }}/",no-port-forwarding,no-x11-forwarding,no-pty,no-agent-forwarding,no-user-rc'
+  loop: "{{ groups['containers'] }}"
+
+- name: Install node_exporter
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+  loop:
+    - prometheus-node-exporter
+    - python-certbot-nginx
+    - nginx
+
+- name: Harden nginx
+  include_role:
+    name: dev-sec.nginx-hardening
+
+- name: Register Let’s Encrypt account
+  command: "certbot register -m {{ le_acct_mail }} --no-eff-email --agree-tos"
+  ignore_errors: yes
+
+- name: Set up TLS certificate
+  command: "certbot certonly -n --nginx --domains {{ inventory_hostname }}"
+
+- name: Install certbot renewal hook
+  lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ inventory_hostname }}.conf"
+    line: "renew_hook = systemctl reload nginx"
+    insertafter: "[renewalparams]"
+
+- name: Install python3-passlib
+  apt:
+    name: python3-passlib
+
+- name: Set basic auth file
+  htpasswd:
+    path: /etc/nginx/node_exporter.htpasswd
+    name: prometheus
+    owner: www-data
+    group: www-data
+    password: "{{ prometheus_exporter_auth }}"
+
+- name: Set up vhost
+  template:
+    src: templates/node_exporter.vhost
+    dest: "/etc/nginx/sites-available/{{ inventory_hostname }}.conf"
+
+- name: Activate vhost config
+  file:
+    src: "/etc/nginx/sites-available/{{ inventory_hostname }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ inventory_hostname }}.conf"
+    state: link
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Create node_exporter run dir
+  file:
+    path: /var/run/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+# - name: Set read ACLs to node_exporter for TLS keys
+#   acl:
+#     path: /etc/letsencrypt
+#     entity: prometheus
+#     etype: user
+#     permissions: rx
+#     recursive: yes
+
+- name: Make Node Exporter listen on localhost only
+  template:
+    src: templates/default_node_exporter
+    dest: /etc/default/prometheus-node-exporter
+  register: prometheus_default_conf
+
+# - name: Setup Node Exporter web server
+#   template:
+#     src: templates/web-config.yml
+#     dest: /etc/prometheus/web-config.yml
+
+- name: Install python-prometheus-client
+  apt:
+    name: python-prometheus-client
+  
+- name: Get fail2ban-exporter
+  get_url:
+    url: https://github.com/jangrewe/prometheus-fail2ban-exporter/raw/master/fail2ban-exporter.py
+    dest: /root/fail2ban-exporter.py
+
+- name: Set up fail2ban export cron
+  cron:
+    job: "python /root/fail2ban-exporter.py"
+    minute: "*"
+
+- name: Restart Node Exporter
+  service:
+    name: prometheus-node-exporter
+    state: restarted
+  when: prometheus_default_conf.changed
+
+- name: Set up Let’s Encrypt renewal cron
+  cron:
+    name: "Let's Encrypt renewal"
+    job: "/usr/bin/certbot renew"
+    special_time: "daily"
+...

@@ -1,0 +1,132 @@
+---
+- name: Ensure that password authentication is disabled
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#(PasswordAuthentication) yes$"
+    replace: "\\1 no"
+  register: sshd_config
+
+- name: Restart sshd
+  service:
+    name: ssh
+    state: restarted
+  when: sshd_config.changed
+
+- name: Update the system
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: Install debian dependencies
+  apt:
+    name: "{{ item }}"
+  loop:
+    - apt-transport-https
+    - software-properties-common
+    - wget
+
+- name: Install Grafana signing key
+  shell: "wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -"
+
+- name: Add Grafana repository
+  command: "add-apt-repository 'deb https://packages.grafana.com/oss/deb stable main'"
+
+- name: Install monitoring software
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+  loop:
+    - prometheus-node-exporter
+    - prometheus
+    - grafana
+    - python-certbot-nginx
+    - nginx
+
+- name: Make Node Exporter listen on localhost only
+  template:
+    src: templates/default_node_exporter
+    dest: /etc/default/prometheus-node-exporter
+  register: node_exporter_default_conf
+
+- name: Restart Node Exporter
+  service:
+    name: prometheus-node-exporter
+    state: restarted
+  when: node_exporter_default_conf.changed
+
+- name: Set up Prometheus
+  template:
+    src: templates/prometheus.yml
+    dest: /etc/prometheus/prometheus.yml
+
+- name: Make Prometheus listen on localhost only
+  template:
+    src: templates/default_prometheus
+    dest: /etc/default/prometheus
+  register: prometheus_default_conf
+
+- name: Restart Prometheus
+  service:
+    name: prometheus
+    state: restarted
+  when: prometheus_default_conf.changed
+
+- name: Reload Prometheus config
+  command: "curl -X POST http://localhost:9090/-/reload"
+
+- name: Set up Grafana
+  template:
+    src: templates/grafana.ini
+    dest: /etc/grafana/grafana.ini
+  register: grafana_conf
+
+- name: Restart Grafana
+  service:
+    name: grafana-server
+    state: restarted
+  when: grafana_conf.changed
+
+- name: Set Grafana admin password
+  command: "grafana-cli admin reset-admin-password {{ grafana_admin_password }}"
+
+- name: Harden nginx
+  include_role:
+    name: dev-sec.nginx-hardening
+
+- name: Register Let’s Encrypt account
+  command: "certbot register -m {{ le_acct_mail }} --no-eff-email --agree-tos"
+  ignore_errors: yes
+
+- name: Set up TLS certificate
+  command: "certbot certonly -n --nginx --domains {{ inventory_hostname }}"
+
+- name: Install certbot renewal hook
+  lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ inventory_hostname }}.conf"
+    line: "renew_hook = systemctl reload nginx"
+    insertafter: "[renewalparams]"
+
+- name: Set up vhost
+  template:
+    src: templates/grafana.vhost
+    dest: "/etc/nginx/sites-available/{{ inventory_hostname }}.conf"
+
+- name: Activate vhost config
+  file:
+    src: "/etc/nginx/sites-available/{{ inventory_hostname }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ inventory_hostname }}.conf"
+    state: link
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Set up Let’s Encrypt renewal cron
+  cron:
+    name: "Let's Encrypt renewal"
+    job: "bash -c '/usr/bin/certbot renew"
+    special_time: "daily"
+
+...
+

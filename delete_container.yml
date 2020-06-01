@@ -186,7 +186,7 @@
 
     - name: Remove cron tasks
       cron:
-        name: "{{ cron_name }}"
+        name: "{{ item }}"
         state: absent
       loop:
         - "Backups for {{ host }}"
