@@ -12,23 +12,6 @@
   loop: "{{ groups['containers'] }}"
   when: "item != inventory_hostname and hostvars[item].role != 'firewall'"
 
-- name: Create monitoring config
-  template:
-    src: templates/vhost_monitoring.j2
-    dest: "/etc/nginx/conf.d/10.{{ inventory_hostname }}.conf"
-
-- name: Install python3-passlib
-  pip:
-    name: passlib
-
-- name: Set basic auth file
-  htpasswd:
-    path: /etc/nginx/node_exporter.htpasswd
-    name: prometheus
-    owner: nginx
-    group: nginx
-    password: "{{ prometheus_exporter_auth }}"
-
 # - name: Create docroot dirs
 #   file:
 #     path: "/var/www/{{ item }}/docroot"

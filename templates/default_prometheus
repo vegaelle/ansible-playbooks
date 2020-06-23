@@ -1,5 +1,5 @@
 # Set the command-line arguments to pass to the server.
-ARGS="--web.listen-address "localhost:9090 --web.enable-lifecycle --web.enable-admin-api"
+ARGS="--web.listen-address "localhost:9090 --web.enable-lifecycle"
 
 # Prometheus supports the following options:
 
