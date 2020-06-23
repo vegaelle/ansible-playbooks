@@ -1,46 +1,50 @@
 ---
-- hosts: hypervisors
-  tasks:
-    - name: Create containers secrets
-      include: tasks/create_container_secrets.yml
-      loop: "{{ groups['containers'] }}"
-      when: item == ansible_limit
-
-- hosts: 127.0.0.1
-  connection: local
-  tasks:
-    - name: Call add_host.py
-      command: "./add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
-      loop: "{{ groups['containers'] }}"
-      when: item == ansible_limit
-
-- hosts: hypervisors
-  tasks:
-    - name: Create containers
-      include: tasks/create_container.yml
-      loop: "{{ groups['containers'] }}"
-      when: item == ansible_limit
-
 - hosts: containers
+  vars_prompt:
+    - name: "host"
+      prompt: "what is the container domain to setup?"
+      private: no
   tasks:
+
+    - name: Get firewall facts
+      set_fact:
+        firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        firewall_public_ip: "{{ hostvars[node].public_ip }}"
+        firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_mac: "{{ hostvars[node].mac }}"
+      when: hostvars[node].role == 'firewall'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get reverse proxy facts
+      set_fact:
+        reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
+      when: hostvars[node].role == 'http'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
+
+    - name: Get mailinabox facts
+      set_fact:
+        miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        miab_ctid: "{{ hostvars[node].ctid }}"
+        miab_domain: "{{ node }}"
+      when: hostvars[node].role == 'miab'
+      loop: "{{ groups['containers'] }}"
+      loop_control:
+        loop_var: node
 
     - name: Setup the containers system
       include_role:
         name: "{{ role }}"
         tasks_from: system
+      when: "host == inventory_hostname"
 
-- hosts: backup
-  tasks:
-    - name: Setup backup account
-      meta: noop
-      loop: "{{ groups['containers'] }}"
-      when: item == ansible_limit
-
-- hosts: monitoring
-  tasks:
-    - name: Setup monitoring
-      meta: noop
-      loop: "{{ groups['containers'] }}"
-      when: item == ansible_limit
+    - name: Finish the containers setup
+      include_role:
+        name: "{{ role }}"
+        tasks_from: post-system
 
 ...
