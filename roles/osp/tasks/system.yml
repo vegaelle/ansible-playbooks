@@ -1,0 +1,153 @@
+---
+- name: Setup system
+  include_role:
+    name: app_ubuntu
+    tasks_from: system
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Install requirements
+  apt:
+    name: "{{ sub_item }}"
+  loop:
+    - redis
+    - gunicorn3
+    - uwsgi-plugin-python
+    - python3-pip
+    - logrotate
+  loop_control:
+    loop_var: sub_item
+
+- name: Install patched nginx (+rtmp)
+  copy:
+    src: files/nginx
+    dest: /usr/local/nginx/sbin/nginx
+    remote_src: no
+
+- name: Fix redis config
+  replace:
+    path: /etc/redis/redis.conf
+    regexp: "appendfsync everysec"
+    replace: "appendfsync no"
+  register: redis_config
+
+- name: Reload redis
+  service:
+    name: redis
+    state: restarted
+  when: redis_config.changed
+
+- name: Clone OSP repository
+  git:
+    repo: https://gitlab.com/Deamos/flask-nginx-rtmp-manager.git
+    dest: /opt/osp
+
+- name: Copy nginx config files
+  copy:
+    src: "/opt/osp/setup/nginx/{{ sub_item }}"
+    dest: "/usr/local/nginx/conf/{{ sub_item }}"
+  loop:
+    - nginx.conf
+    - osp-redirects.conf
+    - osp-rtmp.conf
+    - osp-socketio.conf
+    - mime.types
+  loop_control:
+    loop_var: sub_item
+
+- name: Copy systemd files
+  copy:
+    src: "/opt/osp/setup/{{ sub_item.path }}{{ sub_item.name }}"
+    dest: "/lib/systemd/system/{{ sub_item.name }}"
+  loop:
+    - path: nginx
+      name: nginx-osp.service
+    - path: gunicorn
+      name: osp-worker@.service
+    - path: gunicorn
+      name: osp.target
+  loop_control:
+    loop_var: sub_item
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+    name: "{{ sub_item }}"
+    state: started
+    enabled: yes
+  loop:
+    - nginx-osp.service
+    - osp.target
+  loop_control:
+    loop_var: sub_item
+
+- name: Install python dependencies
+  pip:
+    requirements: /opt/osp/setup/requirements.txt
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+- name: Setup OSP
+  template:
+    src: templates/config.py
+    dest: /opt/osp/conf/config.py
+
+- name: Create directories
+  file:
+    path: "{{ sub_item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+  loop:
+    - /var/www
+    - /var/www/live
+    - /var/www/videos
+    - /var/www/live-rec
+    - /var/www/images
+    - /var/www/live-adapt
+    - /var/stream-thumb
+  loop_control:
+    loop_var: sub_item
+
+- name: Set owner for OSP
+  file:
+    name: "{{ sub_item }}"
+    owner: www-data
+    group: www-dat
+  loop:
+    - /opt/osp
+    - /opt/osp/.git
+  loop_control:
+    loop_var: sub_item
+
+- name: Add FFMPEG4 repository
+  apt_repository:
+    repo: ppa:jonathonf/ffmpeg-4
+    state: present
+
+- name: Install FFMPEG
+  apt:
+    name: ffmpeg
+
+- name: Copy logrotate conf
+  copy:
+    src: "/opt/osp/setup/logrotate/osp"
+    dest: "/etc/logrotate.d/osp"
+
+- name: Initialize database
+  command: "python /opt/osp/manage.py db init"
+...

@@ -1,0 +1,99 @@
+upstream {{ item }}-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:80;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ item }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{ item }};
+    # add_header          Content-Security-Policy "default-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; object-src 'self'";
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass https://{{ item }}-upstream/;
+    }
+}
+
+{% for host in groups['containers'] %}
+{% if hostvars[host].role not in ('http', 'miab', 'firewall') %}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name autoconfig.{{ host }} autodiscover.{{ host }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name autoconfig.{{ host }} autodiscover.{{ host }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ host }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass http://{{ item }}-upstream/;
+        proxy_redirect off;
+
+        proxy_set_header   Host                 $host:$server_port;
+        proxy_set_header   X-Real-IP            $remote_addr;
+        proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto    $scheme;
+    }
+
+    location /socket.io {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_set_header X-NginX-Proxy true;
+
+            # prevents 502 bad gateway error
+        proxy_buffers 8 32k;
+        proxy_buffer_size 64k;
+
+        proxy_redirect off;
+
+        # enables WS support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_pass http://{{ item }}-upstream/socket.io;
+    }
+}
+{% endif %}
+{% endfor %}
