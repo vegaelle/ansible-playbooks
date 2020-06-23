@@ -1,0 +1,51 @@
+{% for item in groups['containers'] %}
+upstream {{ item }}-monitoring-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:9100;
+}
+{% endfor %}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name  {{ inventory_hostname }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name  {{ inventory_hostname }};
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ inventory_hostname }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+    access_log /var/log/nginx/{{ inventory_hostname }}_access_log main;
+    error_log /var/log/nginx/{{ inventory_hostname }}_error_log info;
+
+    root /var/www/localhost/htdocs;
+    index index.htm index.html;
+
+    location / {
+        auth_basic "Access limited";
+        auth_basic_user_file /etc/nginx/node_exporter.htpasswd;
+    }
+
+    {% for item in groups['containers'] %}
+    location /{{ item }}/ {
+        proxy_pass http://{{ item }}-monitoring-upstream/metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    {% endfor %}
+}
+
+

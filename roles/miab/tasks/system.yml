@@ -139,4 +139,34 @@
 #     name: nfs-kernel-server
 #     state: restarted
 
+
+- name: Install prometheus-node-exporter
+  apt:
+    name: prometheus-node-exporter
+
+- name: Create node_exporter run dir
+  file:
+    path: /var/run/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+# - name: Set read ACLs to node_exporter for TLS keys
+#   acl:
+#     path: /etc/letsencrypt
+#     entity: prometheus
+#     etype: user
+#     permissions: rx
+#     recursive: yes
+
+- name: Start Node Exporter
+  service:
+    name: prometheus-node-exporter
+    state: started
+
+- name: Set up Let’s Encrypt renewal cron
+  cron:
+    name: "Let's Encrypt renewal"
+    job: "/usr/bin/certbot renew"
+    special_time: "daily"
 ...

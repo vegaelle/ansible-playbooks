@@ -1,9 +1,16 @@
 [hypervisors]
-brie                hostname=brie.opchee.se         public_ip=178.63.47.165
+hv                hostname=hv.ondule.fr         public_ip=178.63.47.165
 
 [containers]
 fw.pycodon.fr       vlan=0          role=firewall       ansible_ssh_extra_args=100      public_ip=178.63.47.161     mac=00:50:56:00:D8:01   gateway=178.63.47.129
 front.pycodon.fr     vlan=0          role=http       ansible_ssh_extra_args=101
 pycodon.fr           vlan=102        role=miab       ansible_ssh_extra_args=102
 cryptolout.re       vlan=110        role=app        ansible_ssh_extra_args=110
-test.pycodon.fr     vlan=111        role=wordpress     ansible_ssh_extra_args=111
+gordonbleu.fr       vlan=112        role=wordpress      ansible_ssh_extra_args=112
+
+[backup]
+ttnn.backup.ondule.fr      ansible_user=root
+av.backup.ondule.fr      ansible_user=root
+
+[monitoring]
+watch.ondule.fr      ansible_user=root        public_ip=95.217.219.156
