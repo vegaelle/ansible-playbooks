@@ -21,6 +21,7 @@
   apt:
     name: "{{ sub_item }}"
   loop:
+    - git
     - redis
     - gunicorn3
     - uwsgi-plugin-python
@@ -29,11 +30,28 @@
   loop_control:
     loop_var: sub_item
 
+- name: Create nginx-osp dirs
+  file:
+    path: "/usr/local/nginx/{{ sub_item }}"
+    state: directory
+  loop:
+    - sbin
+    - conf
+    - logs
+  loop_control:
+    loop_var: sub_item
+
 - name: Install patched nginx (+rtmp)
-  copy:
-    src: files/nginx
+  get_url:
+    url: https://github.com/gordonzola/ansible-playbooks/raw/master/roles/osp/files/nginx
     dest: /usr/local/nginx/sbin/nginx
-    remote_src: no
+    mode: 0755
+  # Couldn’t use the copy module due to a UnicodeDecodeError, probably in the
+  # lxc plugin
+  # copy:
+  #   src: files/nginx
+  #   dest: /usr/local/nginx/sbin/nginx
+  #   remote_src: no
 
 - name: Fix redis config
   replace:
@@ -57,6 +75,7 @@
   copy:
     src: "/opt/osp/setup/nginx/{{ sub_item }}"
     dest: "/usr/local/nginx/conf/{{ sub_item }}"
+    remote_src: yes
   loop:
     - nginx.conf
     - osp-redirects.conf
@@ -70,25 +89,14 @@
   copy:
     src: "/opt/osp/setup/{{ sub_item.path }}{{ sub_item.name }}"
     dest: "/lib/systemd/system/{{ sub_item.name }}"
+    remote_src: yes
   loop:
-    - path: nginx
+    - path: nginx/
       name: nginx-osp.service
-    - path: gunicorn
+    - path: gunicorn/
       name: osp-worker@.service
-    - path: gunicorn
+    - path: gunicorn/
       name: osp.target
-  loop_control:
-    loop_var: sub_item
-
-- name: Reload systemd
-  systemd:
-    daemon_reload: yes
-    name: "{{ sub_item }}"
-    state: started
-    enabled: yes
-  loop:
-    - nginx-osp.service
-    - osp.target
   loop_control:
     loop_var: sub_item
 
@@ -127,7 +135,7 @@
   file:
     name: "{{ sub_item }}"
     owner: www-data
-    group: www-dat
+    group: www-data
   loop:
     - /opt/osp
     - /opt/osp/.git
@@ -147,7 +155,22 @@
   copy:
     src: "/opt/osp/setup/logrotate/osp"
     dest: "/etc/logrotate.d/osp"
+    remote_src: yes
 
 - name: Initialize database
-  command: "python /opt/osp/manage.py db init"
+  command: "python3 /opt/osp/manage.py db init"
+  environment:
+    TZ: Europe/Paris
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+    name: "{{ sub_item }}"
+    state: started
+    enabled: yes
+  loop:
+    - nginx-osp.service
+    - osp.target
+  loop_control:
+    loop_var: sub_item
 ...
