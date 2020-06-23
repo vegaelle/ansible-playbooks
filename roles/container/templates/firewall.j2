@@ -18,6 +18,7 @@ IN ACCEPT -i net0 -p udp -dport 2049 -log nolog # mountd
 {% for port in redirected_ports %}
 IN ACCEPT -i net0 -p {{ port.proto }} -dport {{ port.value }} -log nolog # redirection for port {{ port.value }} ({{ port.proto }})
 {% endfor %}
+IN ACCEPT -i net0 -p tcp -dport 9100 -log nolog # redirection for node-exporter
 IN ACCEPT -source {{ firewall_ip }} -p icmp # accept ping from firewall
 IN ACCEPT -source 10.0.0.1 -p icmp # accept ping from hypervisor
 IN ACCEPT -source {{ reverse_proxy_ip }} -p icmp # accept ping from reverse proxy
