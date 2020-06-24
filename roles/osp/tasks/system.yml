@@ -4,6 +4,9 @@
     name: app_ubuntu
     tasks_from: system
 
+- name: Setup timezone
+  command: "timedatectl set-timezone Europe/Paris"
+
 - name: Set up web directory
   file:
     path: /srv/public
@@ -70,6 +73,7 @@
   git:
     repo: https://gitlab.com/Deamos/flask-nginx-rtmp-manager.git
     dest: /opt/osp
+    force: yes
 
 - name: Copy nginx config files
   copy:
@@ -136,6 +140,7 @@
     name: "{{ sub_item }}"
     owner: www-data
     group: www-data
+    recurse: yes
   loop:
     - /opt/osp
     - /opt/osp/.git
@@ -157,10 +162,28 @@
     dest: "/etc/logrotate.d/osp"
     remote_src: yes
 
+- name: Setup ejabberd
+  include: tasks/ejabberd.yml
+
 - name: Initialize database
   command: "python3 /opt/osp/manage.py db init"
-  environment:
-    TZ: Europe/Paris
+  ignore_errors: yes
+
+- name: Set owner for OSP
+  file:
+    name: "/opt/osp/db/database.db"
+    owner: www-data
+    group: www-data
+
+- name: Migrate database
+  command: "python3 manage.py db migrate"
+  args:
+    chdir: /opt/osp
+
+- name: Upgrade database
+  command: "python3 manage.py db upgrade"
+  args:
+    chdir: /opt/osp
 
 - name: Reload systemd
   systemd:

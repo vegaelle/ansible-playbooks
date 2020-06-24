@@ -1,16 +1,16 @@
 ---
 - name: Set custom facts
   set_fact:
-    image: alpine-3.10-default_20190626_amd64.tar.xz
-    ostype: alpine
-    disk_size: 8
-    cpu_cores: 1
-    cpu_units: 1024
-    memory: 512
-    swap: 512
-    firewall_file: firewall.j2
-    allow_ssh: yes
-    redirected_ports: []
+    image: "{{ image | default('alpine-3.10-default_20190626_amd64.tar.xz') }}"
+    ostype: "{{ ostype | default('alpine') }}"
+    disk_size: "{{ disk_size | default(8) }}"
+    cpu_cores: "{{ cpu_cores | default(1) }}"
+    cpu_units: "{{ cpu_units | default(1024) }}"
+    memory: "{{ memory | default(512) }}"
+    swap: "{{ swap | default(512) }}"
+    firewall_file: "{{ firewall_file | default('firewall.j2') }}"
+    allow_ssh: "{{ allow_ssh | default('yes') }}"
+    redirected_ports: "{{ redirected_ports | default([]) }}"
 
 - name: Setup container
   include_role:

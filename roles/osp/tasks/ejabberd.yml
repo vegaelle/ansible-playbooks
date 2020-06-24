@@ -1,0 +1,50 @@
+---
+- name: Download ejabberd-20.04
+  get_url:
+    url: "https://www.process-one.net/downloads/downloads-action.php?file=/20.04/ejabberd-20.04-linux-x64.run"
+    dest: /tmp/ejabberd-20.04-linux-x64.run
+    mode: 755
+
+- name: Install ejabberd
+  command: "/tmp/ejabberd-20.04-linux-x64.run ----unattendedmodeui none --mode unattended --prefix /usr/local/ejabberd --cluster 0"
+  args:
+    creates: /usr/local/ejabberd
+
+- name: Create ejabberd dir
+  file:
+    path: /usr/local/ejabberd/conf
+    state: directory
+
+- name: Copy ejabberd config file
+  copy:
+    src: /opt/osp/setup/ejabberd/ejabberd.yml
+    dest: /usr/local/ejabberd/conf/ejabberd.yml
+    remote_src: yes
+
+- name: Fix ejabberd config
+  replace:
+    path: /usr/local/ejabberd/conf/ejabberd.yml
+    regexp: "CHANGEME"
+    replace: "{{ inventory_hostname }}"
+
+- name: Copy ejabberd systemd service file
+  copy:
+    src: /usr/local/ejabberd/bin/ejabberd.service
+    dest: /etc/systemd/system/ejabberd.service
+    remote_src: yes
+
+- name: Start ejabberd
+  systemd:
+    daemon_reload: yes
+    name: ejabberd.service
+    state: started
+    enabled: yes
+
+- name: Register ejabberd admin account
+  command: "/usr/local/ejabberd/bin/ejabberdctl register admin localhost '{{ ejabberd_pass }}'"
+  ignore_errors: yes
+
+- name: Change password for ejabberd admin account
+  command: "/usr/local/ejabberd/bin/ejabberdctl change_password admin localhost '{{ ejabberd_pass }}'"
+  ignore_errors: yes
+...

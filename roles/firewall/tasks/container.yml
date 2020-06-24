@@ -36,6 +36,7 @@
   loop:
     - http
     - miab
+    - osp
   loop_control:
     loop_var: role_name
 
@@ -44,6 +45,7 @@
     roles_vars:
       http: "{{ http }}"
       miab: "{{ miab }}"
+      osp: "{{ osp }}"
 
 # - name: Add sysctl conf
 #   copy:
