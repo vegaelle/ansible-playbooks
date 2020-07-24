@@ -68,9 +68,6 @@
     name:
       - pymysql
 
-- name: Create database password
-  set_fact:
-
 - name: Change admin database password
   mysql_user:
     name: root

@@ -1,4 +1,4 @@
-ansible_host: brie.opchee.se
+ansible_host: hv.ondule.fr
 ansible_connection: ssh
 ansible_user: root
 ansible_network_os: debian

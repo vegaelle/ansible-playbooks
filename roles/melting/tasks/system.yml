@@ -1,0 +1,129 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+- name: Create www-data user
+  user:
+    name: www-data
+    groups: www-data
+    home: /srv
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+
+- name: Install PostgreSQL
+  apk:
+    name: wget,postgresql,postgresql-contrib,postgresql-dev
+
+- name: Install other system requirements
+  apk:
+    name: build-base,python3-dev,sudo,git,zlib-dev,libpng-dev,jpeg-dev
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Install psycopg2
+  pip:
+    name: psycopg2
+
+- name: Create database
+  postgresql_db:
+    name: django
+
+- name: Create database user
+  postgresql_user:
+    name: django
+    password: "{{ database_password }}"
+    role_attr_flags: CREATEDB,NOSUPERUSER
+    priv: ALL
+    db: django
+
+- name: Clone git repository
+  git:
+    repo: "https://framagit.org/gordon/meltingpotes"
+    dest: "/srv/meltingpotes"
+  become: yes
+  become_user: www-data
+
+- name: Install pip dependencies
+  pip:
+    requirements: /srv/meltingpotes/requirements.txt
+
+- name: Configure Django
+  template:
+    src: templates/production.j2
+    dest: /srv/meltingpotes/meltingpotes/settings/production.py
+    owner: www-data
+    group: www-data
+
+- name: Create database
+  command: "python3 /srv/meltingpotes/manage.py migrate --settings=meltingpotes.settings.production"
+  become: yes
+  become_user: www-data
+
+- name: Collect assets
+  command: "python3 /srv/meltingpotes/manage.py collectstatic --settings=meltingpotes.settings.production --no-input"
+  become: yes
+  become_user: www-data
+
+- name: Install uwsgi
+  apk:
+    name: uwsgi,uwsgi-python3
+
+- name: Install supervisor
+  apk:
+    name: supervisor
+
+- name: Configure supervisor
+  template: 
+    src: templates/supervisord.j2
+    dest: /etc/supervisord.conf
+
+- name: Create log directory
+  file:
+    path: /var/log/meltingpotes
+    state: directory
+
+- name: Configure uwsgi
+  template: 
+    src: templates/uwsgi.j2
+    dest: /srv/uwsgi.ini
+
+- name: Start supervisord
+  service:
+    name: supervisord
+    state: started
+    runlevel: default
+
+- name: Reread supervisord
+  command: supervisorctl reread
+
+- name: Reload supervisord
+  command: supervisorctl reload
+...
+
