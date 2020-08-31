@@ -1,3 +1,6 @@
 [submodule "ansible-proxmox-inventory"]
 	path = ansible-proxmox-inventory
 	url = ./ansible-proxmox-inventory
+[submodule "mastodon-ansible"]
+	path = mastodon-ansible
+	url = git@github.com:gordonzola/mastodon-ansible.git

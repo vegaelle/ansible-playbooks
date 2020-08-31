@@ -36,10 +36,21 @@
   apk:
     name: opensmtpd
 
+- name: Get opensmtpd version
+  shell: "smtpd -h 2>&1 | head -n 1 | cut -c 20-"
+  register: opensmtpd_version
+
 - name: Configure SMTP relay
   template:
     src: templates/smtpd.conf
     dest: /etc/smtpd/smtpd.conf
+  when: opensmtpd_version == '6.0.3-portable'
+
+- name: Configure SMTP relay
+  template:
+    src: templates/smtpd2.conf
+    dest: /etc/smtpd/smtpd.conf
+  when: opensmtpd_version != '6.0.3-portable'
 
 - name: Configure SMTP secrets
   template:
@@ -59,8 +70,9 @@
 - name: Install node-exporter
   apk:
     name: prometheus-node-exporter
+    update_cache: yes
     repository:
-      - http://dl-cdn.alpinelinux.org/alpine/edge/testing
+      - http://dl-cdn.alpinelinux.org/alpine/edge/community
       - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
       - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
 

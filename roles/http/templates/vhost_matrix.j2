@@ -1,0 +1,80 @@
+limit_conn_zone $binary_remote_addr zone=matrix:20m;
+
+upstream {{ item }}-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:8008;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name  {{ item }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    listen 8448 ssl default_server;
+    listen [::]:8448 ssl default_server;
+
+    server_name {{ item }};
+
+    client_max_body_size 16m;
+    large_client_header_buffers 4 8k;
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    # root /var/www/vhosts/{{ item }};
+    # index index.htm index.html;
+
+    limit_conn matrix 100;
+
+
+    location /.well-known/matrix/client {
+        return 200 '{"m.homeserver": {"base_url": "https://{{ item }}"}}';
+        add_header Content-Type application/json;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location /_matrix {
+        proxy_pass http://{{ item }}-upstream;
+        include uwsgi_params;
+        client_max_body_size 32M;
+    }
+}
+
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name {{ hostvars[item].extra_domains }};
+
+    client_max_body_size 16m;
+    large_client_header_buffers 4 8k;
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ hostvars[item].extra_domains }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+    access_log /var/log/nginx/{{ hostvars[item].extra_domains }}_access_log main;
+    error_log /var/log/nginx/{{ hostvars[item].extra_domains }}_error_log info;
+
+    root /var/www/vhosts/{{ item }}/element;
+    index index.htm index.html;
+
+    add_header Content-Security-Policy "default-src 'self' '{{ item }}' 'vector.im' https: data: 'unsafe-inline'; worker-src 'self';" always;
+
+    limit_conn matrix 100;
+}
+
+

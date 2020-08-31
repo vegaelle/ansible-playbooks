@@ -1,0 +1,12 @@
+---
+- name: "Setup DNS, mail and certs for {{ item }} additional domains"
+  command: >
+      curl --insecure -X POST --user "me@{{ inventory_hostname }}:{{ miab_pw }}"
+      -d "email=system@{{ additional_domain }}"
+      -d "password={{ mail_account_passphrase }}"
+      "https://{{ inventory_hostname }}/admin/mail/users/add"
+  # ignore_errors: true
+  loop: "{{ hostvars[item].extra_domains.split(',') }}"
+  loop_control:
+    loop_var: additional_domain
+...

@@ -1,0 +1,181 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+- name: Create www-data user
+  user:
+    name: www-data
+    groups: www-data
+    home: /srv
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+
+- name: Install PostgreSQL
+  apk:
+    name: wget,postgresql,postgresql-contrib,postgresql-dev
+
+- name: Install other system requirements
+  apk:
+    name: build-base,curl,python3-dev,sudo,git,zlib-dev,libpng-dev,jpeg-dev,libffi-dev,redis,libxml2-dev,libxslt-dev
+
+- name: Start redis
+  service:
+    name: redis
+    state: started
+    enabled: yes
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Install psycopg2
+  pip:
+    name: psycopg2
+
+- postgresql_query:
+    query: "update pg_database set datallowconn = TRUE where datname = 'template0';"
+
+- postgresql_query:
+    db: template0
+    query: "update pg_database set datistemplate = FALSE where datname = 'template1';"
+
+- postgresql_db:
+    name: template1
+    state: absent
+
+- postgresql_db:
+    name: template1
+    template: template0
+    encoding: UTF8
+
+- postgresql_query:
+    query: "update pg_database set datallowconn = TRUE where datname = 'template0';"
+
+- name: Create database
+  postgresql_db:
+    name: synapse
+    encoding: UTF8
+
+- name: Create database user
+  postgresql_user:
+    name: synapse
+    password: "{{ database_password }}"
+    role_attr_flags: CREATEDB,NOSUPERUSER
+    priv: ALL
+    db: synapse
+
+- name: Install lxml
+  pip:
+    name: "lxml>=3.5.0"
+
+- name: Install txredisapi
+  pip:
+    name: "txredisapi>=1.4.7"
+
+- name: Install hiredis
+  pip:
+    name: "hiredis"
+
+- name: Install synapse
+  pip:
+    name: matrix-synapse
+
+- name: Create homeserver files
+  command: >
+    python3 -m synapse.app.homeserver
+    --server-name "{{ inventory_hostname }}"
+    --config-path homeserver.yaml
+    --generate-config
+    --report-stats=no
+  args:
+    chdir: /srv
+
+- name: Configure synapse
+  template:
+    src: templates/homeserver.j2
+    dest: /srv/homeserver.yaml
+
+- name: Install supervisor
+  apk:
+    name: supervisor
+
+- name: Configure supervisor
+  template: 
+    src: templates/supervisord.j2
+    dest: /etc/supervisord.conf
+
+- name: Create log directory
+  file:
+    path: /var/log/synapse
+    state: directory
+
+- name: Start supervisord
+  service:
+    name: supervisord
+    state: started
+    runlevel: default
+
+- name: Reread supervisord
+  command: supervisorctl reread
+
+- name: Reload supervisord
+  command: supervisorctl reload
+
+- name: Get latest Element version
+  shell: "curl --silent https://api.github.com/repos/vector-im/element-web/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
+  register: element_version
+
+- name: Fetch latest Element version
+  get_url:
+    url: "https://github.com/vector-im/element-web/releases/download/{{ element_version.stdout }}/riot-{{ element_version.stdout }}.tar.gz"
+    dest: "/srv/riot-{{ element_version.stdout }}.tar.gz"
+    owner: www-data
+    group: www-data
+
+- name: Untar the archive
+  command: "tar xf /srv/riot-{{ element_version.stdout }}.tar.gz"
+  args:
+    chdir: "/srv"
+    creates: "/srv/riot-{{ element_version.stdout }}"
+  become: yes
+  become_user: www-data
+
+- name: Configure Element
+  template:
+    src: templates/config.j2
+    dest: "/srv/riot-{{ element_version.stdout }}/config.json"
+    owner: www-data
+    group: www-data
+
+- name: Link public dir to latest version
+  copy:
+    src: "/srv/riot-{{ element_version.stdout }}"
+    dest: "/srv/public/element"
+    remote_src: yes
+
+...

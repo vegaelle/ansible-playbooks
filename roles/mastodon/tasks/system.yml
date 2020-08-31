@@ -1,0 +1,268 @@
+---
+- name: Setup system
+  include_role:
+    name: app_ubuntu
+    tasks_from: system
+
+- name: Setup timezone
+  command: "timedatectl set-timezone Europe/Paris"
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Load vars from Mastodon role
+  include_vars:
+    file: mastodon-ansible/bare/vars/common.yml
+
+- name: Load debian vars from Mastodon role
+  include_vars:
+    file: mastodon-ansible/bare/vars/debian_vars.yml
+
+- name: Override vars
+  set_fact:
+    disable_letsencrypt: "true"
+    disable_nginx: "true"
+    disable_ufw: "true"
+    mastodon_repo: "https://github.com/glitch-soc/mastodon"
+
+    # Mastodon setup
+    mastodon_host: "{{ inventory_hostname }}"
+    mastodon_db_password: "{{ db_pass }}"
+    local_domain: "{{ inventory_hostname }}"
+    local_https: false
+    # web_domain: mastodon.example.com
+    # alternate_domains: example1.com,example2.com
+    # single_user_mode: true
+    default_locale: en
+    # paperclip_root_path: /var/lib/mastodon/public-system
+    # paperclip_root_url: /system
+    # prepared_statements: false
+
+    # Redis
+    redis_host: redis
+    redis_port: 6379
+
+    # Postgres
+    db_host: db
+    db_user: mastodon
+    db_name: mastodon
+    db_port: 5432
+
+    # Email
+    # email_domain_blacklist: example1.com|example2.de|etc
+    # email_domain_whitelist: example1.com|example2.de|etc
+    smtp_server: localhost
+    smtp_port: 587
+    smtp_login: ""
+    smtp_password: ""
+    smtp_from_address: "system@{{ inventory_hostname }}"
+    # smtp_domain:
+    # smtp_delivery_method: smtp
+    # smtp_auth_method: plain
+    # smtp_ca_file: /etc/ssl/certs/ca-certificates.crt
+    # smtp_openssl_verify_mode: peer
+    # smtp_enable_starttls_auto: true
+    # smtp_tls: true
+
+    # CDN
+    # cdn_host: https://assets.example.com
+    # s3_cloudfront_host:
+
+    # S3
+    s3_enabled: false
+    # s3_bucket:
+    # aws_access_key_id:
+    # aws_secret_access_key:
+    # s3_region:
+    # s3_protocol: https
+    # s3_hostname: 192.168.1.123:9000
+    # s3_endpoint:
+    # s3_signature_version:
+
+    swift_enabled: false
+    # swift_username:
+    # swift_tenant:
+    # swift_password:
+    # swift_auth_url:
+    # swift_container:
+    # swift_object_url:
+    # swift_region:
+    # swift_domain_name:
+    # swift_cache_ttl:
+
+    # Streaming API
+    # streaming_api_base_url:
+    # streaming_cluster_num: 1
+
+- name: Create mastodon public dir
+  file:
+    path: /home/mastodon/public
+    state: directory
+    owner: mastodon
+    group: mastodon
+
+- name: Create public bind-mount
+  mount:
+    path: /srv/public/public
+    src: /home/mastodon/live/public
+    opts: bind
+    state: mounted
+    fstype: none
+
+
+- name: Apply postgres role
+  include_role:
+    name: mastodon-ansible/bare/roles/postgres
+
+- name: Apply redis role
+  include_role:
+    name: mastodon-ansible/bare/roles/redis
+
+- name: Apply mastodon-web role
+  include_role:
+    name: mastodon-ansible/bare/roles/web
+
+# - name: Get repo signing keys
+#   include: tasks/get_signing_key.yml
+#   loop:
+#     - "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+#     - "https://dl.yarnpkg.com/debian/pubkey.gpg"
+
+# - name: Add required repositories
+#   apt_repository:
+#     repo: {{ item }}
+#     update_cache: yes
+#   loop:
+#     - "https://dl.yarnpkg.com/debian/ stable main"
+#     - "https://deb.nodesource.com/node_12.x bionic main"
+
+# - name: Install requirements
+#   apt:
+#     name: "{{ sub_item }}"
+#   loop:
+#     - imagemagick
+#     - ffmpeg
+#     - libpq-dev
+#     - libxml2-dev
+#     - libxslt1-dev
+#     - file
+#     - git-core
+#     - g++
+#     - libprotobuf-dev
+#     - protobuf-compiler
+#     - pkg-config
+#     - nodejs
+#     - gcc
+#     - autoconf
+#     - bison
+#     - build-essential
+#     - libssl-dev
+#     - libyaml-dev
+#     - libreadline6-dev
+#     - zlib1g-dev
+#     - libncurses5-dev
+#     - libffi-dev
+#     - libgdbm5
+#     - libgdbm-dev
+#     - redis-server
+#     - redis-tools
+#     - postgresql
+#     - postgresql-contrib
+#     - yarn
+#     - libidn11-dev
+#     - libicu-dev
+#     - libjemalloc-dev
+#   loop_control:
+#     loop_var: sub_item
+
+# - name: Add mastodon user
+#   user:
+#     name: mastodon
+
+# - name: Clone rbenv
+#   git:
+#     repo: https://github.com/rbenv/rbenv.git
+#     dest: "/home/mastodon/.rbenv"
+#     clone: true
+#   become: yes
+#   become_user: mastodon
+
+# - name: Clone ruby-build
+#   git:
+#     repo: "https://github.com/rbenv/ruby-build.git"
+#     dest: "/home/mastodon/.rbenv/plugins/ruby-build"
+#     clone: true
+#   register: ruby_build
+#   become: yes
+#   become_user: mastodon
+
+# - name: Configure rbenv
+#   command: ./configure
+#   args:
+#     chdir: "/home/mastodon/.rbenv/src"
+#   register: rbenv_configure
+#   become: yes
+#   become_user: mastodon
+
+# - name: Build rbenv
+#   command: make
+#   args:
+#     chdir: "/home/mastodon/.rbenv/src"
+#   when: rbenv_configure is succeeded
+#   become: yes
+#   become_user: mastodon
+
+# - name: Update profile settings
+#   copy:
+#     dest: "~/.bashrc"
+#     content: |
+#       export PATH="~/.rbenv/bin:${PATH}"
+#       eval "$(rbenv init -)"
+#   become: yes
+#   become_user: mastodon
+
+# - name: Check if the Ruby version is already installed
+#   shell: "~/.rbenv/bin/rbenv versions | grep -q {{ ruby_version }}"
+#   register: ruby_installed
+#   ignore_errors: yes
+#   check_mode: no
+#   become: yes
+#   become_user: mastodon
+
+# - name: Install Ruby {{ ruby_version }}
+#   shell: "~/.rbenv/bin/rbenv install {{ ruby_version }}"
+#   args:
+#     executable: /bin/bash
+#   when: ruby_installed is failed
+#   become: yes
+#   become_user: mastodon
+
+# - name: Set the default Ruby version to {{ ruby_version }}
+#   shell: "~/.rbenv/bin/rbenv global {{ ruby_version }}"
+#   args:
+#     executable: /bin/bash
+#   register: default_ruby_version
+#   become: yes
+#   become_user: mastodon
+
+# - name: Install bundler
+#   shell: 'export PATH="$HOME/.rbenv/bin:$PATH"; eval "$(rbenv init -)"; gem install bundler'
+#   args:
+#     executable: /bin/bash
+#   when: default_ruby_version is succeeded
+#   become: yes
+#   become_user: mastodon
+
+
+
+...

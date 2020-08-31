@@ -63,6 +63,7 @@
     name: "{{ item }}-ssh"
     public_ssh_key: "{{ hostvars[item].ssh_public_key }}"
   loop: "{{ groups['backup'] }}"
+  ignore_errors: yes
 
 - name: Install borgbackup
   apt:

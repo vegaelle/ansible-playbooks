@@ -1,0 +1,18 @@
+---
+- name: Set custom facts
+  set_fact:
+    image: ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
+    ostype: ubuntu
+    disk_size: 128
+    cpu_cores: 2
+    cpu_units: 2048
+    memory: 3072
+    swap: 2048
+    firewall_file: firewall_masto.j2
+    allow_ssh: no
+    redirected_ports: []
+- name: Setup container
+  include_role:
+    name: app_ubuntu
+    tasks_from: container
+...

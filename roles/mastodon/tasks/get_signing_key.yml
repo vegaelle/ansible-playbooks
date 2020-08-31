@@ -1,0 +1,14 @@
+---
+- name: Fetch key
+  get_url:
+    url: "{{ item }}"
+    dest: "/tmp/ansible_repo_signing_key"
+
+- name: Add key
+  command: "apt-key add /tmp/ansible_repo_signing_key"
+
+- name: Remove key file
+  file:
+    path: "/tmp/ansible_repo_signing_key"
+    state: absent
+...
