@@ -7,7 +7,7 @@
 #
 
 export PROXMOX_USERNAME='ansible@pve'
-export PROXMOX_URL='https://hv.ondule.fr:8006'
+export PROXMOX_URL='https://hv2.ondule.fr:8006'
 echo -n 'Enter Proxmox password:'
 read -s PROXMOX_PASSWORD
 echo ''

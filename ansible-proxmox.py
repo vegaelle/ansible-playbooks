@@ -256,7 +256,7 @@ def main_list(options, config_path):
                     'notes': description
                 }
 
-            metadata['ansible_host'] = 'hv.ondule.fr'
+            metadata['ansible_host'] = 'hv2.ondule.fr'
             metadata['ansible_user'] = 'root'
             metadata['ansible_connection'] = 'lxc_ssh'
             metadata['ansible_ssh_extra_args'] = vmid
