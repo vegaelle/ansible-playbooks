@@ -1,9 +1,9 @@
 ---
-- name: Create sites docroots
-  file:
-    path: "/var/www/nginx/{{ item }}/docroot"
-    state: directory
-  loop: "{{ groups['containers'] }}"
+# - name: Create sites docroots
+#   file:
+#     path: "/var/www/vhosts/{{ item }}/docroot"
+#     state: directory
+#   loop: "{{ groups['containers'] }}"
 
 - name: Create sites config
   template:

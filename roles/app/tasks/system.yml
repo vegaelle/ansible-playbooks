@@ -44,13 +44,13 @@
   template:
     src: templates/smtpd.conf
     dest: /etc/smtpd/smtpd.conf
-  when: opensmtpd_version == '6.0.3-portable'
+  when: opensmtpd_version.stdout == '6.0.3-portable'
 
 - name: Configure SMTP relay
   template:
     src: templates/smtpd2.conf
     dest: /etc/smtpd/smtpd.conf
-  when: opensmtpd_version != '6.0.3-portable'
+  when: opensmtpd_version.stdout != '6.0.3-portable'
 
 - name: Configure SMTP secrets
   template:

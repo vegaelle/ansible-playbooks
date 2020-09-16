@@ -43,7 +43,7 @@ server {
     large_client_header_buffers 4 8k;
 
 
-    root /var/www/vhosts/{{ item }}/public;
+    root /var/www/vhosts/{{ item }}/mastodon/live/public;
     index index.php index.htm index.html;
 
     gzip on;

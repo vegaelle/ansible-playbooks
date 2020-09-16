@@ -39,11 +39,13 @@
     mastodon_host: "{{ inventory_hostname }}"
     mastodon_db_password: "{{ db_pass }}"
     local_domain: "{{ inventory_hostname }}"
+    mastodon_home: "/srv/public/mastodon/"
+    mastodon_user: "mastodon"
     local_https: false
     # web_domain: mastodon.example.com
     # alternate_domains: example1.com,example2.com
     # single_user_mode: true
-    default_locale: en
+    default_locale: fr
     # paperclip_root_path: /var/lib/mastodon/public-system
     # paperclip_root_url: /system
     # prepared_statements: false
@@ -104,20 +106,20 @@
     # streaming_api_base_url:
     # streaming_cluster_num: 1
 
-- name: Create mastodon public dir
-  file:
-    path: /home/mastodon/public
-    state: directory
-    owner: mastodon
-    group: mastodon
+# - name: Create mastodon public dir
+#   file:
+#     path: /home/mastodon/public
+#     state: directory
+#     owner: mastodon
+#     group: mastodon
 
-- name: Create public bind-mount
-  mount:
-    path: /srv/public/public
-    src: /home/mastodon/live/public
-    opts: bind
-    state: mounted
-    fstype: none
+# - name: Create public bind-mount
+#   mount:
+#     path: /srv/public/public
+#     src: /home/mastodon/live/public
+#     opts: bind
+#     state: mounted
+#     fstype: none
 
 
 - name: Apply postgres role
