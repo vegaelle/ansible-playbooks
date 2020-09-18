@@ -6,8 +6,8 @@
     disk_size: 8
     cpu_cores: 1
     cpu_units: 1024
-    memory: 1024
-    swap: 512
+    memory: 2048
+    swap: 1024
     firewall_file: firewall.j2
     allow_ssh: yes
     redirected_ports: []
