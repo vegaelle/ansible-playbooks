@@ -104,6 +104,7 @@
 - name: Install synapse
   pip:
     name: matrix-synapse
+    state: latest
 
 - name: Create homeserver files
   command: >
