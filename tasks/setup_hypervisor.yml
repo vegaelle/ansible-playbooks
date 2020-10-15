@@ -100,4 +100,62 @@
   loop:
     - backup
     - backup-mount
+
+- name: Install node_exporter
+  apt:
+    name: prometheus-node-exporter
+    state: latest
+
+- name: Ensure node_exporter is running
+  service:
+    name: prometheus-node-exporter
+    state: started
+
+- name: Install pve_exporter
+  pip:
+    name: prometheus-pve-exporter
+    state: latest
+
+- name: Create monitoring group
+  command: "pveum groupadd monitoring -comment 'Monitoring group'"
+  ignore_errors: yes
+
+- name: Add ACL role to monitoring group
+  command: "pveum aclmod / -group monitoring -role PVEAuditor"
+  ignore_errors: yes
+
+- name: Create monitoring user
+  command: "pveum useradd pve_exporter@pve"
+  ignore_errors: yes
+
+- name: Change group for monitoring user
+  command: "pveum usermod pve_exporter@pve -group monitoring"
+  ignore_errors: yes
+
+- name: Change monitoring password
+  command: "pveum passwd pve_exporter@pve"
+  args:
+    stdin: "{{ pve_exporter_pw }}"
+  ignore_errors: yes
+
+- name: Configure PVE exporter
+  template:
+    src: templates/pve_exporter.yml.j2
+    dest: /usr/share/pve_exporter/pve_exporter.yml
+
+- name: Copy systemd service file for PVE exporter
+  copy:
+    src: files/pve_exporter.service.yml
+    dest: /etc/systemd/system/pve_exporter.service
+    remote_src: no
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
+- name: Enable PVE exporter
+  service:
+    name: pve_exporter
+    state: started
+    enabled: yes
+
 ...

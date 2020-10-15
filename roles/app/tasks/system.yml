@@ -67,21 +67,21 @@
     state: started
     runlevel: default
 
-- name: Install node-exporter
-  apk:
-    name: prometheus-node-exporter
-    update_cache: yes
-    repository:
-      - http://dl-cdn.alpinelinux.org/alpine/edge/community
-      - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
-      - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
+# - name: Install node-exporter
+#   apk:
+#     name: prometheus-node-exporter
+#     update_cache: yes
+#     repository:
+#       - http://dl-cdn.alpinelinux.org/alpine/edge/community
+#       - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
+#       - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
 
-- name: Create node_exporter run dir
-  file:
-    path: /var/run/prometheus
-    state: directory
-    owner: prometheus
-    group: prometheus
+# - name: Create node_exporter run dir
+#   file:
+#     path: /var/run/prometheus
+#     state: directory
+#     owner: prometheus
+#     group: prometheus
 
 # - name: Make Node Exporter listen on localhost only
 #   template:
@@ -89,10 +89,10 @@
 #     dest: /etc/default/prometheus-node-exporter
 #   register: prometheus_default_conf
 
-- name: Start Node Exporter
-  service:
-    name: node-exporter
-    state: started
+# - name: Start Node Exporter
+#   service:
+#     name: node-exporter
+#     state: started
 
 # - name: Restart Node Exporter
 #   service:

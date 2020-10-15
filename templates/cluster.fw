@@ -11,3 +11,5 @@ enable: 1
 [RULES]
 
 IN ACCEPT -dest {{ public_ip }} -p tcp -dport 80 -log nolog # letsencrypt challenge
+IN ACCEPT -dest 10.0.0.1 -p tcp -source {{ reverse_proxy_ip }} -dport 9221 -log nolog # open metrics port for management
+IN ACCEPT -dest 10.0.0.1 -p tcp -source {{ reverse_proxy_ip }} -dport 9100 -log nolog # open metrics port for management

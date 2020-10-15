@@ -1,0 +1,12 @@
+[Unit]
+Description=Proxmox VE Prometheus Exporter
+After=network.target
+Wants=network.target
+
+[Service]
+Restart=on-failure
+WorkingDirectory=/usr/share/pve_exporter
+ExecStart=/usr/local/bin/pve_exporter /usr/share/pve_exporter/pve_exporter.yml 9221 10.0.0.1
+
+[Install]
+WantedBy=multi-user.target

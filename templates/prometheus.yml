@@ -38,10 +38,21 @@ scrape_configs:
       - targets: ['localhost:9100']
 
 {% for node in groups['hypervisors'] %}
+  - job_name: host-{{ node }}
+    static_configs:
+      - targets: ['{{ reverse_proxy_hostname }}']
+    metrics_path: /{{ node }}
+    params:
+      module: [default]
+    basic_auth:
+      username: prometheus
+      password: {{ prometheus_exporter_auth }}
+    scheme: https
+
   - job_name: pve-{{ node }}
     static_configs:
-      - targets: ['{{ hostvars[node].hostname }}:9221']
-    metrics_path: /pve
+      - targets: ['{{ reverse_proxy_hostname }}']
+    metrics_path: /{{ node }}/pve
     params:
       module: [default]
     basic_auth:
