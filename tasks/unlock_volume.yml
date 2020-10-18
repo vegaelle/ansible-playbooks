@@ -2,25 +2,25 @@
   set_fact:
     host_vars: "{{ hostvars[item] }}"
 
-- name: Check if CT exists
+- name: "<{{ item }}>: Check if CT exists"
   shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ host_vars.ansible_ssh_extra_args }}.conf | wc -l"
   register: config_exists
 
-- name: Check if CT is up
+- name: "<{{ item }}>: Check if CT is up"
   command: "pct status {{ host_vars.ansible_ssh_extra_args }}"
   register: ct_status
   when: config_exists.stdout == '1'
 
-- name: Load ZFS key
+- name: "<{{ item }}>: Load ZFS key"
   command: "zfs load-key {{ host_vars.pool }}"
   args:
     stdin: "{{ host_vars.passphrase }}"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
-- name: Mount ZFS volumes
+- name: "<{{ item }}>: Mount ZFS volumes"
   command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ansible_ssh_extra_args }}-disk-0"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
-- name: Start container
+- name: "<{{ item }}>: Start container"
   command: "pct start {{ host_vars.ansible_ssh_extra_args }}"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"

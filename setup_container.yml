@@ -11,6 +11,8 @@
         firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
         firewall_public_ip: "{{ hostvars[node].public_ip }}"
         firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_public_ip6: "{{ hostvars[node].public_ip6 }}"
+        firewall_gateway6: "{{ hostvars[node].gateway6 }}"
         firewall_mac: "{{ hostvars[node].mac }}"
       when: hostvars[node].role == 'firewall'
       loop: "{{ groups['containers'] }}"

@@ -16,7 +16,7 @@
   include: tasks/efi_loader.yml
   loop:
     - sda2
-    - sdb2
+    # - sdb2
 
 - name: Add kernel to EFI
   command: "pve-efiboot-tool kernel add {{ kernel_version.stdout }}"

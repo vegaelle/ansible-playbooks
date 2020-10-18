@@ -43,13 +43,16 @@
     creates: "/var/lib/vz/template/cache/{{ item }}"
   loop:
     - ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
-    - alpine-3.10-default_20190626_amd64.tar.xz
+    # - alpine-3.10-default_20190626_amd64.tar.xz
     - alpine-3.11-default_20200425_amd64.tar.xz
 
 - name: Create bridge interface
-  blockinfile:
-    path: /etc/network/interfaces
-    block: "{{ lookup('file', './files/interfaces') }}"
+  # blockinfile:
+  #   path: /etc/network/interfaces
+  #   block: "{{ lookup('file', './files/interfaces') }}"
+  template:
+    src: templates/interfaces.j2
+    dest: /etc/network/interfaces
   register: bridge_task
 
 - name: Activate bridge
@@ -59,7 +62,12 @@
 - name: Set up firewall
   template:
     src: templates/cluster.fw
-    dest: /etc/pve/firewall/cluster.fw
+    dest: /root/etc_pve_firewall_cluster.fw
+  register: firewall_file_changed
+
+- name: Copy firewall file (workaround)
+  command: cp /root/etc_pve_firewall_cluster.fw /etc/pve/firewall/cluster.fw
+  when: firewall_file_changed.changed
 
 - name: Create PVE mountpoint
   file:
@@ -135,8 +143,13 @@
 - name: Change monitoring password
   command: "pveum passwd pve_exporter@pve"
   args:
-    stdin: "{{ pve_exporter_pw }}"
+    stdin: "{{ pve_exporter_pw }}\n{{ pve_exporter_pw }}"
   ignore_errors: yes
+
+- name: Create PVE exporter directory
+  file:
+    path: /usr/share/pve_exporter
+    state: directory
 
 - name: Configure PVE exporter
   template:

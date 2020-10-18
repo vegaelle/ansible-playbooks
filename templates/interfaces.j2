@@ -1,0 +1,57 @@
+auto lo
+iface lo inet loopback
+
+{% if routed_network %}
+auto {{ public_interface }}
+iface {{ public_interface }} inet static
+    address  {{ public_ip }}
+    gateway  {{ gateway }}
+
+iface {{ public_interface }} inet6 static
+    address  {{ public_ip6 }}
+    gateway  {{ gateway6 }}
+{% else %}
+iface {{ public_interface }} inet manual
+{% endif %}
+
+auto vmbr0
+iface vmbr0 inet static
+{% if routed_network %}
+    address 10.1.1.1/32
+    bridge-ports  none
+{% else %}
+    address  {{ public_ip }}
+    gateway  {{ gateway }}
+    bridge-ports  {{ public_interface }}
+{% endif %}
+    post-up echo 1 > /proc/sys/net/ipv4/ip_forward
+    post-up echo 1 > /proc/sys/net/ipv4/conf/{{ public_interface }}/proxy_arp
+    bridge-stp  off
+    bridge-fd  0
+
+{% if routed_network %}
+iface vmbr0 inet6 static
+    address  {{ firewall_public_ip6[:20] }}:1/64
+    post-up echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+    post-up ip r a {{ public_ip6[:20] }}::/56 dev vmbr0
+{% else %}
+iface vmbr0 inet6 static
+    address  {{ public_ip6 }}
+    gateway  {{ gateway6 }}
+{% endif %}
+
+auto vmbr1
+iface vmbr1 inet static
+    address  10.0.0.1/16
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+    post-up echo 1 > /proc/sys/net/ipv4/ip_forward
+    post-up ip r a 10.0.0.0/24 dev vmbr1
+    post-up ip r a 10.0.0.0/16 via 10.0.0.100 dev vmbr1
+
+iface vmbr1 inet6 static
+    address fec0:7365:6974:616e::1/64
+    post-up ip r a fec0:7365:6974:616e::1/64 dev vmbr1
