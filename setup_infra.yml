@@ -40,23 +40,23 @@
         path: tmp
         state: absent
 
-- hosts: backup
-  tasks:
-    - name: Setup backup servers
-      include: tasks/setup_backup.yml
+# - hosts: backup
+#   tasks:
+#     - name: Setup backup servers
+#       include: tasks/setup_backup.yml
 
-- hosts: monitoring
-  tasks:
-    - name: Get reverse proxy facts
-      set_fact:
-        reverse_proxy_hostname: "{{ node }}"
-      when: hostvars[node].role == 'http'
-      loop: "{{ groups['containers'] }}"
-      loop_control:
-        loop_var: node
+# - hosts: monitoring
+#   tasks:
+#     - name: Get reverse proxy facts
+#       set_fact:
+#         reverse_proxy_hostname: "{{ node }}"
+#       when: hostvars[node].role == 'http'
+#       loop: "{{ groups['containers'] }}"
+#       loop_control:
+#         loop_var: node
 
-    - name: Setup monitoring servers
-      include: tasks/setup_monitoring.yml
+#     - name: Setup monitoring servers
+#       include: tasks/setup_monitoring.yml
 
 - hosts: hypervisors
   tasks:

@@ -4,6 +4,11 @@
     path: /etc/apt/sources.list.d/pve-enterprise.list
     state: absent
 
+- name: Enable Proxmox No-Subscription Repository
+  copy:
+    src: files/sources.list
+    dest: /etc/apt/sources.list.d/pve-community.list
+
 - name: Set DNS servers
   template:
     src: templates/resolv.conf
@@ -13,6 +18,11 @@
   apt:
     upgrade: dist
     update_cache: yes
+
+- name: Install ifupdown2
+  apt:
+    name: ifupdown2
+    state: present
 
 - name: Disable rpcbind
   systemd:
@@ -31,8 +41,8 @@
     regexp: "^#(PasswordAuthentication) yes$"
     replace: "\\1 no"
 
-- name: Setup EFI
-  include: tasks/efi.yml
+# - name: Setup EFI (useless now)
+#   include: tasks/efi.yml
 
 - name: Update the appliance list
   command: "pveam update"

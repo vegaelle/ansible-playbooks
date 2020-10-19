@@ -19,11 +19,14 @@ iface vmbr0 inet static
 {% if routed_network %}
     address 10.1.1.1/32
     bridge-ports  none
+    post-up ip r a {{ firewall_public_ip }}/32 dev vmbr0
 {% else %}
     address  {{ public_ip }}
     gateway  {{ gateway }}
     bridge-ports  {{ public_interface }}
 {% endif %}
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
     post-up echo 1 > /proc/sys/net/ipv4/conf/{{ public_interface }}/proxy_arp
     bridge-stp  off

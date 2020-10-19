@@ -12,6 +12,11 @@
     state: directory
     recurse: yes
 
+- name: Create loader dir
+  file:
+    path: /boot/efi/loader
+    state: directory
+
 - name: Create loader.conf
   template:
     src: templates/loader.conf
