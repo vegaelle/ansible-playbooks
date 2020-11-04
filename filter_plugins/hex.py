@@ -1,5 +1,5 @@
 def hex_int(value):
-    return hex(int(value))[2:]
+    return '{:0>2}'.format(hex(int(value))[2:])
 
 
 class FilterModule:

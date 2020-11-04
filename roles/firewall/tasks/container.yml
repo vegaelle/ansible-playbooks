@@ -7,22 +7,45 @@
 - name: Install iptables in container
   command: "pct exec {{ ctid }} /sbin/apk add iptables"
 
+- name: Install ip6tables in container
+  command: "pct exec {{ ctid }} /sbin/apk add ip6tables"
+
 - name: Install vlan in container
   command: "pct exec {{ ctid }} /sbin/apk add vlan"
 
-- name: Create vlan interfaces
-  blockinfile:
-    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
-    block: |
-      {% for host in groups['containers'] %}
-      {% if hostvars[host].vlan != '0' %}
-      auto eth1.{{ hostvars[host].vlan }}
-      iface eth1.{{ hostvars[host].vlan }} inet static
-          address 10.0.{{ hostvars[host].vlan }}.1
-          netmask 255.255.255.0
+- name: Set forwarding
+  lineinfile:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/sysctl.d/01-firewall.conf"
+    line: "net.ipv6.conf.all.forwarding=1"
+    create: yes
+  register: ipv6_forwarding
 
-      {% endif %}
-      {% endfor %}
+- name: Reload sysctl
+  command: "sysctl -p"
+  when: ipv6_forwarding.changed
+
+- name: Create vlan interfaces
+  template:
+    src: templates/interfaces.j2
+    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
+  # blockinfile:
+  #   path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
+  #   block: |
+  #     {% for host in groups['containers'] %}
+  #     {% if hostvars[host].vlan != '0' %}
+  #     auto eth0.{{ hostvars[host].vlan }}
+  #     iface eth0.{{ hostvars[host].vlan }} inet static
+  #         address 10.0.{{ hostvars[host].vlan }}.1
+  #         netmask 255.255.255.0
+  #         post-up ip r a 10.0.{{ hostvars[host].vlan }}.0/24 dev eth0.{{ hostvars[host].vlan }}
+
+  #     iface eth0.{{ hostvars[host].vlan }} inet6 static
+  #         address {{ public_ip6[:17] }}{{ ctid | hex }}::2
+  #         netmask 64
+  #         post-up ip r a {{ public_ip6[:17] }}{{ hostvars[host].vlan | hex }}::/64 dev eth0.{{ hostvars[host].vlan }}
+
+  #     {% endif %}
+  #     {% endfor %}
   register: bridge_task
 
 - name: Restart container networking to enable vlans
@@ -66,4 +89,18 @@
 
 - name: Reload iptables service
   command: "pct exec {{ ctid }} rc-service iptables reload"
+
+- name: Add ip6tables rules
+  template:
+    src: templates/firewall_rules_v6.j2
+    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/iptables/rules6-save"
+
+- name: Enable ip6tables service
+  command: "pct exec {{ ctid }} rc-update add ip6tables"
+
+- name: Start ip6tables service
+  command: "pct exec {{ ctid }} rc-service ip6tables start"
+
+- name: Reload ip6tables service
+  command: "pct exec {{ ctid }} rc-service ip6tables reload"
 ...

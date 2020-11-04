@@ -80,10 +80,10 @@
     --cores={{ cpu_cores }} --cpuunits={{ cpu_units }} --memory={{ memory }}
     {% if role == 'firewall' %}
     --net0=name=eth0,bridge=vmbr0,firewall=0,gw={{ firewall_gateway }},ip={{ firewall_public_ip }}/32,{% if firewall_public_ip6 %}gw6={{ firewall_gateway6 }},ip6={{ firewall_public_ip6 }},{% endif %}hwaddr={{ firewall_mac }}
-    --net1=name=eth1,bridge=vmbr1,firewall=0,gw=10.0.{{ vlan }}.1,ip=10.0.0.{{ ctid }}/16,ip6=fec0:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/64
+    # --net1=name=eth1,bridge=vmbr1,firewall=0,gw=10.0.{{ vlan }}.1,ip=10.0.0.{{ ctid }}/16,ip6=fd00:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/64
     {% else %}
-    --net0=name=eth0,bridge=vmbr0,firewall=1{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip6={{ public_ip6[:17] }}{{ ctid | hex }}:7665:6761:6e62:7477/64,gw6={{ firewall_public_ip6[:-3] }}
-    --net1=name=eth1,bridge=vmbr1,firewall=1,gw={{ firewall_ip }},ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip6=fec0:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/64
+    --net0=name=eth0,bridge=vmbr0,firewall=0{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip=10.0.{{ vlan }}.{{ ctid }}/24,gw={% if vlan != '0' %}10.0.{{ vlan }}.1{% else %}{{ firewall_public_ip }}{% endif %},ip6={{ public_ip6[:17] }}{{ ctid | hex }}:7665:6761:6e62:7477/64,gw6={{ firewall_public_ip6[:-3] }}
+    # --net1=name=eth1,bridge=vmbr1,firewall=1,gw={{ firewall_ip }},ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip6=fd00:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/88
     {% endif %}
     --onboot=0 --ostype={{ ostype }} --start=0 --swap={{ swap }}
     --features mount=nfs,nesting=1
@@ -143,26 +143,37 @@
     state: absent
   when: ostype == 'alpine'
 
-- name: Add firewall rules
+- name: Set shell prompt for container
+  lineinfile:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/profile"
+    line: "export PS1='[{{ ctid }}]\\h:\\w\\$ '"
+    regexp: "^export PS1="
+
+- name: Load /etc/profile from container
   template:
-    src: "{{ firewall_file }}"
-    dest: "/root/tmp-{{ ctid }}.fw"
-    owner: root
-  when: role != 'firewall'
+    src: templates/profile
+    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/root/.profile"
 
-- name: Copy firewall rules
-  # copy:
-  #   remote_src: yes
-  #   src: "/root/tmp/{{ ctid }}.fw"
-  #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
-  command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
-  when: role != 'firewall'
+# - name: Add firewall rules
+#   template:
+#     src: "{{ firewall_file }}"
+#     dest: "/root/tmp-{{ ctid }}.fw"
+#     owner: root
+#   when: role != 'firewall'
 
-- name: Remove tmp file
-  file:
-    path: "/root/tmp-{{ ctid }}.fw"
-    state: absent
-  when: role != 'firewall'
+# - name: Copy firewall rules
+#   # copy:
+#   #   remote_src: yes
+#   #   src: "/root/tmp/{{ ctid }}.fw"
+#   #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
+#   command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
+#   when: role != 'firewall'
+
+# - name: Remove tmp file
+#   file:
+#     path: "/root/tmp-{{ ctid }}.fw"
+#     state: absent
+#   when: role != 'firewall'
 
 - name: Get container state
   shell: "pct list | grep {{ ctid }} | awk '{print $2}'"

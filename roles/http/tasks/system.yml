@@ -65,6 +65,11 @@
     src: "templates/00-letsencrypt.conf"
     dest: /etc/nginx/conf.d/00-letsencrypt.conf
 
+- name: Make letsencrypt directory
+  file:
+    path: /etc/ssl/letsencrypt
+    state: directory
+
 - name: Get certs
   shell: "ls *.pem | grep -v ssl_private_key | sed 's/.pem//'"
   args:
@@ -140,8 +145,9 @@
     name: prometheus-node-exporter
     repository:
       - http://dl-cdn.alpinelinux.org/alpine/edge/testing
-      - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
-      - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
+      - http://dl-cdn.alpinelinux.org/alpine/edge/community
+      - http://dl-cdn.alpinelinux.org/alpine/v3.11/main
+      - http://dl-cdn.alpinelinux.org/alpine/v3.11/community
 
 - name: Create node_exporter run dir
   file:

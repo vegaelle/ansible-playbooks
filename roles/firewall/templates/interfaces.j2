@@ -1,0 +1,39 @@
+auto lo
+iface lo inet loopback
+iface lo inet6 loopback
+
+auto eth0
+iface eth0 inet static
+    address {{ firewall_public_ip }}
+    netmask 255.255.255.255
+# --- BEGIN PVE ---
+    post-up ip route add {{ firewall_gateway }} dev eth0
+    post-up ip route add default via {{ firewall_gateway }} dev eth0
+    pre-down ip route del default via {{ firewall_gateway }} dev eth0
+    pre-down ip route del {{ firewall_gateway }} dev eth0
+# --- END PVE ---
+    post-up ip route add 10.0.0.0/16 dev eth0
+    hostname {{ item }}
+
+iface eth0 inet6 static
+    address {{ firewall_public_ip6[:-3] }}
+    netmask 64
+    gateway {{ firewall_gateway6 }}
+    post-up ip r a {{ public_ip6[:17] }}00::/56 dev eth0
+    post-up sysctl -w net.ipv6.conf.all.forwarding=1
+
+{% for host in groups['containers'] %}
+{% if hostvars[host].vlan != '0' %}
+auto eth0.{{ hostvars[host].vlan }}
+iface eth0.{{ hostvars[host].vlan }} inet static
+    address 10.0.{{ hostvars[host].vlan }}.1
+    netmask 255.255.255.0
+    post-up ip r a 10.0.{{ hostvars[host].vlan }}.0/24 dev eth0.{{ hostvars[host].vlan }}
+
+iface eth0.{{ hostvars[host].vlan }} inet6 static
+    address {{ public_ip6[:17] }}{{ hostvars[host].vlan | hex }}::2
+    netmask 64
+    post-up ip r a {{ public_ip6[:17] }}{{ hostvars[host].vlan | hex }}::/64 dev eth0.{{ hostvars[host].vlan }}
+
+{% endif %}
+{% endfor %}

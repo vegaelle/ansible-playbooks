@@ -56,6 +56,16 @@
     # - alpine-3.10-default_20190626_amd64.tar.xz
     - alpine-3.11-default_20200425_amd64.tar.xz
 
+- name: Ensure vlan module is loaded
+  lineinfile:
+    path: /etc/modules
+    line: "8021q"
+
+- name: Load vlan module
+  modprobe:
+    name: "8021q"
+    state: present
+
 - name: Create bridge interface
   # blockinfile:
   #   path: /etc/network/interfaces
@@ -65,8 +75,8 @@
     dest: /etc/network/interfaces
   register: bridge_task
 
-- name: Activate bridge
-  shell: "ifdown vmbr1; sleep 1; ifup vmbr1"
+- name: Reload network
+  shell: "ifreload -a"
   when: bridge_task.changed
 
 - name: Set up firewall
@@ -74,6 +84,11 @@
     src: templates/cluster.fw
     dest: /root/etc_pve_firewall_cluster.fw
   register: firewall_file_changed
+
+- name: Create firewall dir
+  file:
+    path: /etc/pve/firewall
+    state: directory
 
 - name: Copy firewall file (workaround)
   command: cp /root/etc_pve_firewall_cluster.fw /etc/pve/firewall/cluster.fw
