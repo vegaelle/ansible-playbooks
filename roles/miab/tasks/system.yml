@@ -143,20 +143,20 @@
 #   service:
 #     name: nfs-kernel-server
 #     state: restarted
-- name: Install node-exporter
-  apt:
-    name: prometheus-node-exporter
+# - name: Install node-exporter
+#   apt:
+#     name: prometheus-node-exporter
 
-- name: Create node_exporter run dir
-  file:
-    path: /var/run/prometheus
-    state: directory
-    owner: prometheus
-    group: prometheus
+# - name: Create node_exporter run dir
+#   file:
+#     path: /var/run/prometheus
+#     state: directory
+#     owner: prometheus
+#     group: prometheus
 
-- name: Start Node Exporter
-  service:
-    name: prometheus-node-exporter
-    state: started
+# - name: Start Node Exporter
+#   service:
+#     name: prometheus-node-exporter
+#     state: started
 
 ...
