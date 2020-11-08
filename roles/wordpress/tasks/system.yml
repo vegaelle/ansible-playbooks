@@ -41,11 +41,11 @@
 - name: Configure PHP-fpm
   template:
     src: templates/www.conf
-    dest: "/etc/php/7.2/fpm/pool.d/www.conf"
+    dest: "/etc/php/7.4/fpm/pool.d/www.conf"
 
 - name: Start php-fpm
   service:
-    name: php7.2-fpm
+    name: php7.4-fpm
     state: reloaded
     runlevel: default
 

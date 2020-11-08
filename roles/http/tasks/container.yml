@@ -1,17 +1,17 @@
 ---
-- name: Set custom facts
+- name: "<{{ item }}> Set custom facts"
   set_fact:
     allow_ssh: no
     firewall_file: firewall_http.j2
-- name: Setup container
+- name: "<{{ item }}> Setup container"
   include_role:
     name: container
     tasks_from: container
 
-- name: Install vlan in container
+- name: "<{{ item }}> Install vlan in container"
   command: "pct exec {{ ctid }} /sbin/apk add vlan"
 
-- name: Create vlan interfaces
+- name: "<{{ item }}> Create vlan interfaces"
   blockinfile:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
     block: |
@@ -26,21 +26,21 @@
       {% endfor %}
   register: bridge_task
 
-- name: Restart container networking to enable vlans
+- name: "<{{ item }}> Restart container networking to enable vlans"
   command: "pct exec {{ ctid }} /etc/init.d/networking restart"
   when: bridge_task.changed
 
-- name: Create public dir
+- name: "<{{ item }}> Create public dir"
   file:
     path: /srv/public
     state: directory
 
-- name: Create snippets subdir (for pvesm support)
+- name: "<{{ item }}> Create snippets subdir (for pvesm support)"
   file:
     path: /srv/public/snippets
     state: directory
 
-- name: Create Let’s Encrypt dir
+- name: "<{{ item }}> Create Let’s Encrypt dir"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
     state: directory

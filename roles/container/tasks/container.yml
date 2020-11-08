@@ -1,89 +1,86 @@
 ---
 
-- name: Create bridge info
+- name: "<{{ item }}> Create bridge info"
   set_fact:
-    vlan_iface: "vmbr1.{{ vlan }}"
     ip: "10.0.{{ vlan }}.{{ ctid }}"
 
-- name: Create ZFS volume
+- name: "<{{ item }}> Create ZFS volume"
   command: "zfs create -o encryption=on -o keyformat=passphrase {{ zfs_volume }}"
   args:
     stdin: "{{ passphrase }}"
     creates: "/{{ zfs_volume }}"
 
-# - name: Mount ZFS volume
+# - name: "<{{ item }}> Mount ZFS volume"
 #   command: "zfs mount {{ zfs_volume }}"
 #
 
-- name: Check if storage exists
+- name: "<{{ item }}> Check if storage exists"
   shell: "pvesm status | grep root-{{ ctid }} | wc -l"
   register: storage_exists
 
-- name: Create PVE storage
+- name: "<{{ item }}> Create PVE storage"
   command:
     cmd: "pvesm add zfspool root-{{ ctid }} --pool {{ zfs_volume }}"
   when: storage_exists.stdout == '0'
 
-- name: Create snapshot mountpoint
+- name: "<{{ item }}> Create snapshot mountpoint"
   file:
     path: "/{{ zfs_volume }}/snapshot"
     state: directory
 
-- name: Create ZFS disk volume
+- name: "<{{ item }}> Create ZFS disk volume"
   command:
     cmd: "zfs create {{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0"
 
-- name: Create backups conf dir
+- name: "<{{ item }}> Create backups conf dir"
   file:
     path: "/{{ zfs_volume }}/.backups"
     state: directory
 
-- name: Copy backup SSH key
+- name: "<{{ item }}> Copy backup SSH key"
   copy:
     content: "{{ backup_ssh_key }}"
     dest: "/{{ zfs_volume }}/.backups/{{ item }}-backup"
     mode: "0600"
 
-- name: Create Borg configuration
+- name: "<{{ item }}> Create Borg configuration"
   template:
     src: "{{ borgmatic_config_file }}"
     dest: "/{{ zfs_volume }}/.backups/borgmatic.conf"
 
-- name: Initiate backup
+- name: "<{{ item }}> Initiate backup"
   command: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf init -e repokey"
   register: borgmatic_init
 
-- name: Create snapshot cron task
+- name: "<{{ item }}> Create snapshot cron task"
   cron:
     name: "Snapshot for {{ item }}"
     minute: "{{ inventory_index }}"
     job: "bash -c \"/usr/sbin/zfs snapshot {{ zfs_volume }}/subvol-{{ ctid }}-disk-0@`date +\\%Y-\\%m-\\%d-\\%H-\\%M-\\%S`\""
 
-- name: Create snapshot prune cron task
+- name: "<{{ item }}> Create snapshot prune cron task"
   cron:
     name: "Snapshot prune for {{ item }}"
     minute: "5"
     hour: "23"
     job: "bash -c \"/usr/sbin/zfs list -t snapshot -H -S creation -o name {{ zfs_volume }}/subvol-{{ ctid }}-disk-0 | tail -n +25 | xargs -L 1 /usr/sbin/zfs destroy\""
 
-- name: Create backup cron task
+- name: "<{{ item }}> Create backup cron task"
   cron:
     name: "Backups for {{ item }}"
     minute: "10"
     hour: "{{ ( inventory_index|int ) + 2 }}"
     job: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf"
 
-- name: Create container  # WARN: can’t process CT update yet
+- name: "<{{ item }}> Create container"  # WARN: can’t process CT update yet
   command: |
     pct create {{ ctid }} local:vztmpl/{{ image }} --hostname={{ role }}-{{ main_domain }}
     --cores={{ cpu_cores }} --cpuunits={{ cpu_units }} --memory={{ memory }}
     {% if role == 'firewall' %}
     --net0=name=eth0,bridge=vmbr0,firewall=0,gw={{ firewall_gateway }},ip={{ firewall_public_ip }}/32,{% if firewall_public_ip6 %}gw6={{ firewall_gateway6 }},ip6={{ firewall_public_ip6 }},{% endif %}hwaddr={{ firewall_mac }}
-    # --net1=name=eth1,bridge=vmbr1,firewall=0,gw=10.0.{{ vlan }}.1,ip=10.0.0.{{ ctid }}/16,ip6=fd00:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/64
     {% else %}
-    --net0=name=eth0,bridge=vmbr0,firewall=0{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip=10.0.{{ vlan }}.{{ ctid }}/24,gw={% if vlan != '0' %}10.0.{{ vlan }}.1{% else %}{{ firewall_public_ip }}{% endif %},ip6={{ public_ip6[:17] }}{{ ctid | hex }}:7665:6761:6e62:7477/64,gw6={{ firewall_public_ip6[:-3] }}
-    # --net1=name=eth1,bridge=vmbr1,firewall=1,gw={{ firewall_ip }},ip=10.0.{{ vlan }}.{{ ctid }}/24{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip6=fd00:7365:6974:616e:00{{ vlan | hex }}::{{ ctid | hex }}/88
+    --net0=name=eth0,bridge=vmbr0,firewall=0{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip=10.0.{{ vlan }}.{{ ctid }}/24,gw={% if vlan != '0' %}10.0.{{ vlan }}.1{% else %}{{ firewall_public_ip }}{% endif %},ip6={{ public_ip6[:17] }}{{ ctid | hex }}:7665:6761:6e62:7477/64,gw6={{ firewall_public_ip6[:17] }}{{ ctid | hex }}::2
     {% endif %}
     --onboot=0 --ostype={{ ostype }} --start=0 --swap={{ swap }}
     --features mount=nfs,nesting=1
@@ -91,11 +88,11 @@
   args:
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/bin"
 
-- name: Copy CT conf file
+- name: "<{{ item }}> Copy CT conf file"
   command: "cp /etc/pve/lxc/{{ ctid }}.conf /root/tmp-{{ ctid }}.conf"
   when: ostype == 'alpine'
 
-# - name: Create mountpoint for front
+# - name: "<{{ item }}> Create mountpoint for front"
 #   blockinfile:
 #     path: "/root/tmp-{{ ctid }}.conf"
 #     block: |
@@ -106,7 +103,7 @@
 #   register: 'mountpoints_changed'
 
 # thanks to https://unix.stackovernet.com/fr/q/108786
-- name: Fix pcap for alpine
+- name: "<{{ item }}> Fix pcap for alpine"
   blockinfile:
     path: "/root/tmp-{{ ctid }}.conf"
     block: |
@@ -133,35 +130,35 @@
 
   when: ostype == 'alpine'
 
-- name: Copy CT conf file back
+- name: "<{{ item }}> Copy CT conf file back"
   command: "cp /root/tmp-{{ ctid }}.conf /etc/pve/lxc/{{ ctid }}.conf"
   when: ostype == 'alpine'
 
-- name: Remove tmp file
+- name: "<{{ item }}> Remove tmp file"
   file:
     path: "/root/tmp-{{ ctid }}.conf"
     state: absent
   when: ostype == 'alpine'
 
-- name: Set shell prompt for container
+- name: "<{{ item }}> Set shell prompt for container"
   lineinfile:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/profile"
     line: "export PS1='[{{ ctid }}]\\h:\\w\\$ '"
     regexp: "^export PS1="
 
-- name: Load /etc/profile from container
+- name: "<{{ item }}> Load /etc/profile from container"
   template:
     src: templates/profile
     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/root/.profile"
 
-# - name: Add firewall rules
+# - name: "<{{ item }}> Add firewall rules"
 #   template:
 #     src: "{{ firewall_file }}"
 #     dest: "/root/tmp-{{ ctid }}.fw"
 #     owner: root
 #   when: role != 'firewall'
 
-# - name: Copy firewall rules
+# - name: "<{{ item }}> Copy firewall rules"
 #   # copy:
 #   #   remote_src: yes
 #   #   src: "/root/tmp/{{ ctid }}.fw"
@@ -169,55 +166,55 @@
 #   command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
 #   when: role != 'firewall'
 
-# - name: Remove tmp file
+# - name: "<{{ item }}> Remove tmp file"
 #   file:
 #     path: "/root/tmp-{{ ctid }}.fw"
 #     state: absent
 #   when: role != 'firewall'
 
-- name: Get container state
+- name: "<{{ item }}> Get container state"
   shell: "pct list | grep {{ ctid }} | awk '{print $2}'"
   register: container_running
 
-- name: Start container
+- name: "<{{ item }}> Start container"
   command: "pct start {{ ctid }}"
   when: container_running.stdout == 'stopped'
 
-- name: Update container packages
+- name: "<{{ item }}> Update container packages"
   command: "pct exec {{ ctid }} /sbin/apk update"
   when: "ostype == 'alpine'"
 
-- name: Update container packages
+- name: "<{{ item }}> Update container packages"
   command: "pct exec {{ ctid }} /usr/bin/apt update"
   when: "ostype == 'ubuntu'"
 
-- name: Install Python3 in container
+- name: "<{{ item }}> Install Python3 in container"
   command: "pct exec {{ ctid }} /sbin/apk add python3"
   when: "ostype == 'alpine'"
 
-- name: Install ssh in container
+- name: "<{{ item }}> Install ssh in container"
   command: "pct exec {{ ctid }} /sbin/apk add openssh"
   when: "ostype == 'alpine' and allow_ssh"
 
-- name: Install ssh in container
+- name: "<{{ item }}> Install ssh in container"
   command: "pct exec {{ ctid }} -- /usr/bin/apt install -y openssh-server"
   when: "ostype == 'ubuntu' and allow_ssh"
 
-- name: Start ssh in container
+- name: "<{{ item }}> Start ssh in container"
   command: "pct exec {{ ctid }} /etc/init.d/sshd start"
   when: "ostype == 'alpine' and allow_ssh"
 
-- name: Enable ssh in container
+- name: "<{{ item }}> Enable ssh in container"
   command: "pct exec {{ ctid }} rc-update add sshd default"
   when: "ostype == 'alpine' and allow_ssh"
 
-- name: Create public dir in container
+- name: "<{{ item }}> Create public dir in container"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
     state: directory
   when: role != 'http'
 
-- name: Create snippets subdir (for pvesm support)
+- name: "<{{ item }}> Create snippets subdir (for pvesm support)"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/snippets"
     state: directory

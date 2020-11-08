@@ -55,6 +55,7 @@
     - ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
     # - alpine-3.10-default_20190626_amd64.tar.xz
     - alpine-3.11-default_20200425_amd64.tar.xz
+    - ubuntu-20.04-standard_20.04-1_amd64.tar.gz
 
 - name: Ensure vlan module is loaded
   lineinfile:

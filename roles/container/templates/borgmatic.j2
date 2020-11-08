@@ -202,5 +202,6 @@ hooks:
     #    - echo "`date` - Backup created."
 
     # List of one or more shell commands or scripts to execute in case an exception has occurred.
-    #on_error:
+    on_error:
+        - umount /{{ zfs_volume }}/snapshot
     #    - echo "`date` - Error while creating a backup."

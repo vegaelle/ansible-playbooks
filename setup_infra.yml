@@ -18,6 +18,7 @@
           - "PEM"
           - "-f"
           - "tmp/{{ item }}-backup"
+        creates: "tmp/{{ item }}-backup"
       ignore_errors: yes
       loop: "{{ groups['containers'] }}"
       when: hostvars[item].backup_ssh_key is not defined
@@ -77,6 +78,7 @@
     - name: Get reverse proxy facts
       set_fact:
         reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        reverse_proxy_ip6: "{{ firewall_public_ip6[:17] }}{{ hostvars[node].ctid | hex }}:7665:6761:6e62:7477"
         reverse_proxy_ctid: "{{ hostvars[node].ctid }}"
         reverse_proxy_hostname: "{{ node }}"
       when: hostvars[node].role == 'http'
@@ -87,6 +89,7 @@
     - name: Get mailinabox facts
       set_fact:
         miab_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
+        miab_ip6: "{{ firewall_public_ip6[:17] }}{{ hostvars[node].ctid | hex }}:7665:6761:6e62:7477"
         miab_ctid: "{{ hostvars[node].ctid }}"
         miab_domain: "{{ node }}"
       when: hostvars[node].role == 'miab'
@@ -108,6 +111,8 @@
         firewall_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
         firewall_public_ip: "{{ hostvars[node].public_ip }}"
         firewall_gateway: "{{ hostvars[node].gateway }}"
+        firewall_public_ip6: "{{ hostvars[node].public_ip6 }}"
+        firewall_gateway6: "{{ hostvars[node].gateway6 }}"
         firewall_mac: "{{ hostvars[node].mac }}"
       when: hostvars[node].role == 'firewall'
       loop: "{{ groups['containers'] }}"

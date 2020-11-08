@@ -60,6 +60,12 @@
   shell: "curl -s https://mailinabox.email/setup.sh | bash"
   environment: "{{ miab_env }}"
 
+- name: Copy patched ssl_certificates.py
+  copy:
+    src: files/ssl_certificates.py
+    dest: /root/mailinabox/management/ssl_certificates.py
+    remote_src: no
+
 - name: Create public dir
   file:
     path: /home/user-data/ssl/snippets
@@ -96,6 +102,14 @@
   include: tasks/additional_dns.yml
   loop: "{{ groups['containers'] }}"
   when: hostvars[item].extra_domains is defined
+
+- name: Change IPv6 address for containers
+  command: >
+      curl --insecure -X POST --user "me@{{ inventory_hostname }}:{{ miab_pw }}"
+      -d "{{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477"
+      "https://{{ inventory_hostname }}/admin/dns/custom/{{ item }}/aaaa"
+  loop: "{{ groups['containers'] }}"
+
 
 #- name: Setup NFS firewall rules
 #  blockinfile:

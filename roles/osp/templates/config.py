@@ -1,6 +1,7 @@
 # Set Database Location and Type
 # For MySQL Connections add ?charset=utf8mb4 for full Unicode Support
-dbLocation="sqlite:///db/database.db"
+# dbLocation="sqlite:///db/database.db"
+dbLocation="mysql+pymysql://osp:{{ database_password }}@localhost/osp?charset=utf8mb4"
 
 # Redis Configuration
 redisHost="localhost" # Default localhost

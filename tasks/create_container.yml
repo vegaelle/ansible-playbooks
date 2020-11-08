@@ -10,6 +10,15 @@
     role: "{{ hostvars[item].role }}"
     zfs_volume: "{{ hostvars[item].pool }}"
     inventory_index: "{{ groups['containers'].index(item) }}"
+    name: "{{ item }}"
+    domain: "{{ main_domain }}"
+    ct_hostname: "{{ main_domain }}"
+    zfs_volume_passphrase: "{{ passphrase }}"
+    backup_ssh_key: "{{ hostvars[item].backup_ssh_key }}"
+    backup_ssh_pub_key: "{{ hostvars[item].backup_ssh_pub_key }}"
+    mail_account_passphrase: "{{ hostvars[item].mail_account_passphrase }}"
+    extra_secrets: "{{ hostvars[item].extra_secrets }}"
+    pool: "{{ zfs_volume }}"
 - name: Include role
   include_role:
     name: "{{ host.role }}"

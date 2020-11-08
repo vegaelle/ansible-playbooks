@@ -18,7 +18,7 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
     server_name {{ item }};
-    add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' blob:; script-src 'self' 'unsafe-inline' blob:; object-src 'self' blob:; worker-src 'self' blob:";
+    add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' blob: data:; script-src 'self' 'unsafe-inline' blob: data:; object-src 'self' blob: data:; worker-src 'self' blob: data:";
 
     ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
