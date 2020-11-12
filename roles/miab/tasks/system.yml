@@ -21,7 +21,7 @@
 - name: update system
   apt:
     upgrade: dist
-    update_cache: yes
+    # update_cache: yes
 
 - name: Install curl
   apt:

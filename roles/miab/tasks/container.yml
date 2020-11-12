@@ -24,6 +24,10 @@
 - name: "<{{ item }}> Update apt"
   command: "pct exec {{ ctid }} -- apt update"
 
+- name: "<{{ item }}> Get locales"
+  command: "locale | head -n 1"
+  register: active_locale
+
 - name: "<{{ item }}> Install locales"
   command: "pct exec {{ ctid }} locale-gen {{ locale }}"
   loop:
@@ -31,6 +35,7 @@
     - fr_FR.UTF-8
   loop_control:
     loop_var: locale
+  when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
 - name: "<{{ item }}> Update locale"
   command: "pct exec {{ ctid }} -- update-locale {{ locale }}=en_US.UTF-8"
@@ -40,18 +45,22 @@
     - LC_CTYPE
   loop_control:
     loop_var: locale
+  when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
 - name: "<{{ item }}> Fix locale config file"
   copy:
     src: files/locale
     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/default/locale"
     remote_src: no
+  when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
 - name: "<{{ item }}> Stop container"
   command: "pct stop {{ ctid }}"
+  when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
 - name: "<{{ item }}> Restart container"
   command: "pct start {{ ctid }}"
+  when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
 - name: "<{{ item }}> Install nfs"
   command: "pct exec {{ ctid }} -- apt install -y nfs-kernel-server"

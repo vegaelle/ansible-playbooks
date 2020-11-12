@@ -20,6 +20,16 @@
     home: /srv
     system: yes
 
+- name: Add universe repository
+  apt_repository:
+    repo: deb http://archive.ubuntu.com/ubuntu focal universe
+    state: absent
+
+- name: Shamelessly install python2 for nodejs installation
+  apt:
+    name: python2
+    update_cache: yes
+
 - name: Load vars from Mastodon role
   include_vars:
     file: mastodon-ansible/bare/vars/common.yml

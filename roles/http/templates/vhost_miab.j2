@@ -1,3 +1,5 @@
+limit_conn_zone $binary_remote_addr zone=miab:20m;
+
 upstream {{ item }}-upstream {
     server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:443;
 }
@@ -30,7 +32,9 @@ server {
     root /var/www/vhosts/{{ item }};
     index index.htm index.html;
 
+    limit_conn masto 100;
     location / {
+        proxy_set_header Host $host;
         proxy_pass https://{{ item }}-upstream/;
     }
 }

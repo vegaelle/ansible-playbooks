@@ -26,11 +26,9 @@ COMMIT
 
 *nat
 :PREROUTING ACCEPT [0:0]
-/* [0:0] -A PREROUTING -d {{ firewall_public_ip6[:-3] }}/128 -p tcp --dport 80 -j ACCEPT */
-/* [0:0] -A PREROUTING -d {{ firewall_public_ip6[:-3] }}/128 -p tcp --dport 443 -j ACCEPT */
-[0:0] -A PREROUTING ! -d {{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477/128 -p tcp --dport 80 -j DNAT --to-destination [{{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477]:80
-[0:0] -A PREROUTING ! -d {{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477/128 -p tcp --dport 443 -j DNAT --to-destination [{{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477]:443
 {% for container in groups['containers'] %}
+[0:0] -A PREROUTING -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}::/64 -p tcp --dport 80 -j DNAT --to-destination [{{ reverse_proxy_ip6}}]:80
+[0:0] -A PREROUTING -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}::/64 -p tcp --dport 443 -j DNAT --to-destination [{{ reverse_proxy_ip6 }}]:443
 {% if hostvars[container].role in roles_vars and 'allow_ssh' in roles_vars[hostvars[container].role] and roles_vars[hostvars[container].role].allow_ssh %}
 [0:0] -A PREROUTING -d {{ firewall_public_ip6[:-3] }} -p tcp --dport 22{{ hostvars[container].ctid }} -j DNAT --to-destination [{{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}:7665:6761:6e62:7477]:22
 {% endif %}

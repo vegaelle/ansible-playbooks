@@ -31,6 +31,7 @@ iface vmbr0 inet static
     post-up echo 1 > /proc/sys/net/ipv4/conf/{{ public_interface }}/proxy_arp
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
     post-up ip r a 10.0.0.0/24 dev vmbr0
+    post-up ip r d 10.0.0.0/16 dev vmbr0
     post-up ip r a 10.0.0.0/16 via {{ firewall_public_ip }} dev vmbr0
     bridge-stp off
     bridge-fd  0

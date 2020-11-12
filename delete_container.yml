@@ -1,10 +1,4 @@
 ---
-- name: Remove monitoring config
-  hosts: monitoring
-  tasks:
-    - name: "TODO: Do whatever is required"
-      meta: noop
-
 - hosts: hypervisors
   remote_user: root
   vars_prompt:
@@ -35,6 +29,7 @@
         firewall_public_ip6: "{{ hostvars[node].public_ip6 }}"
         firewall_gateway6: "{{ hostvars[node].gateway6 }}"
         firewall_mac: "{{ hostvars[node].mac }}"
+        firewall_ctid: "{{ hostvars[node].ctid }}"
       when: hostvars[node].role == 'firewall'
       loop: "{{ groups['containers'] }}"
       loop_control:
@@ -133,6 +128,13 @@
       command: "umount /mnt/pve/nfs-{{ ctid }}"
       ignore_errors: yes
       when: "host_vars.role not in ('http', 'miab', 'firewall')"
+
+    - name: Remove mountpoint from front
+      command: "sed -i '#/mnt/pve/nfs-{{ ctid }}#d' /etc/pve/lxc/{{ reverse_proxy_ctid }}.conf"
+      # lineinfile:
+      #   path: "/etc/pve/lxc/{{ reverse_proxy_ctid }}.conf"
+      #   regexp: "/mnt/pve/nfs-{{ ctid }}"
+      #   state: absent
 
     - name: Delete NFS share
       command: "pvesm remove nfs-{{ ctid }}"
@@ -234,11 +236,11 @@
     # - name: Remove ports redirections configs
     #   shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
 
-- name: Remove backup account
-  hosts: backup
-  tasks:
-    - name: Create new container user
-      meta: noop
+# - name: Remove backup account
+#   hosts: backup
+#   tasks:
+#     - name: TODO
+#       meta: noop
 
 - name: Remove volume info in vault
   hosts: 127.0.0.1
@@ -251,20 +253,6 @@
       # command: "./remove_host.py '{{ ctid }}'"
       file:
         path: "./host_vars/{{ hostvars['global'].global_host }}"
-
-- name: Setup DNS
-  hosts: dns
-  tasks:
-
-# - name: Setup front server
-#   hosts: http
-#   tasks:
-#     - name: Remove virtualhost
-#       meta: noop
-#       notify: Reload HTTP server
-#   handlers:
-#     - name: Reload HTTP server
-#       meta: noop
 ...
 
 

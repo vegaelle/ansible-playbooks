@@ -72,7 +72,7 @@ server {
     root /var/www/vhosts/{{ item }}/element;
     index index.htm index.html;
 
-    add_header Content-Security-Policy "default-src 'self' '{{ item }}' 'vector.im' https: data: 'unsafe-inline'; worker-src 'self';" always;
+    add_header Content-Security-Policy "default-src 'self' '{{ item }}' 'vector.im' https: data: blob: 'unsafe-inline'; worker-src 'self';" always;
 
     limit_conn matrix 100;
 }
