@@ -22,7 +22,7 @@ domains=`ls *.pem | grep -vE '^(ssl_certificate|ssl_private_key|dh2048).pem$' | 
 for domain in $domains
 do
     domain_cert=`ls -1t $domain*.pem | head -n 1`
-    domains_cert=`openssl x509 -in $domain_cert -text -noout | grep DNS: | sed -e 's/^[[:space:]]*/ /' | tr ',' '\n' | cut -c 6- | grep -vE '^(autoconfig|autodiscover|www)\.'`
+    domains_cert=`openssl x509 -in $domain_cert -text -noout | grep DNS: | sed -e 's/^[[:space:]]*/ /' | tr ',' '\n' | cut -c 6- | grep -vE '^(autodiscover|www)\.'`
     for name in $domains_cert
     do
         cp $source_certs_dir/$domain_cert $dest_certs_dir/$name.pem

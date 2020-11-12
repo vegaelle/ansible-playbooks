@@ -12,7 +12,7 @@ upstream {{ item }}-upstream {
 server {
     listen 80;
     listen [::]:80;
-    server_name  {{ item }};
+    server_name  {{ item }} www.{{ item }};
 
     include letsencrypt.conf;
 
@@ -24,7 +24,7 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name {{ item }};
+    server_name {{ item }} www.{{ item }};
 
     ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
@@ -175,4 +175,23 @@ server {
 
 }
 
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name autoconfig.{{ item }} autodiscover.{{ item }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
 
+    ssl_certificate    /etc/ssl/letsencrypt/autoconfig.{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass https://miab-upstream/;
+    }
+}
