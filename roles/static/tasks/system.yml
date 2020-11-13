@@ -1,0 +1,47 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+- name: Create www-data user
+  user:
+    name: www-data
+    groups: www-data
+    home: /srv
+    shell: /bin/sh
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+- name: Install SSH server
+  apk:
+    name: openssh
+    state: present
+
+- name: Start SSH server
+  service:
+    name: sshd
+    state: started
+    runlevel: default
+...
+

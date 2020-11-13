@@ -17,7 +17,7 @@
 
 - name: "<{{ item }}> Create public dir"
   file:
-    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl/snippets"
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
     state: directory
     recurse: yes
 
@@ -25,7 +25,7 @@
   command: "pct exec {{ ctid }} -- apt update"
 
 - name: "<{{ item }}> Get locales"
-  command: "locale | head -n 1"
+  shell: "locale | head -n 1"
   register: active_locale
 
 - name: "<{{ item }}> Install locales"
@@ -62,67 +62,10 @@
   command: "pct start {{ ctid }}"
   when: active_locale.stdout != 'LANG=en_US.UTF-8'
 
-- name: "<{{ item }}> Install nfs"
-  command: "pct exec {{ ctid }} -- apt install -y nfs-kernel-server"
-
-- name: "<{{ item }}> Set up NFS mounts"
-  template:
-    src: templates/exports
-    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/exports"
-
-- name: "<{{ item }}> Start nfs"
-  command: "pct exec {{ ctid }} -- systemctl reload nfs-kernel-server"
-
-- name: "<{{ item }}> Check if NFS storage exists"
-  shell: "pvesm status | grep nfs-ssl | wc -l"
-  register: storage_exists
-
-- name: "<{{ item }}> Create NFS SSL storage"
-  command: "pvesm add nfs nfs-ssl --export /home/user-data/ssl --path /mnt/pve/nfs-ssl --server 10.0.{{ vlan }}.{{ ctid }} --content snippets"
-  when: storage_exists.stdout == '0'
-
-# - name: "<{{ item }}> Bind-mount public dirs"
-#   mount:
-#     src: "/{{ item.pool }}/subvol-{{ item.ctid }}-disk-0/srv/public"
-#     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/{{ item.ctid }}"
-#     opts: bind
-#     fstype: none
-#     state: mounted
-#   loop: "{{ groups['containers'] }}"
-#   when: "item.ctid != ctid"
-
 - name: "<{{ item }}> Create Let’s Encrypt dir"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl/lets_encrypt/webroot"
     state: directory
 
-# - name: "<{{ item }}> Bind-mount Let’s Encrypt dirs"
-#   mount:
-#     src: "/var/containers/miab/home/user-data/ssl/"
-#     path: "/var/containers/http/home/user-data/ssl"
-#     opts: bind
-#     fstype: none
-#     state: mounted
-
-- name: "<{{ item }}> Get front container state"
-  shell: "pct list | grep {{ reverse_proxy_ctid }} | awk '{print $2}'"
-  register: front_container_running
-
-- name: "<{{ item }}> Stop nginx in front container"
-  command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx stop"
-  ignore_errors: yes
-  when: "front_container_running.stdout == 'running'"
-
-- name: "<{{ item }}> Stop front container (to apply mountpoint config)"
-  command: "pct stop {{ reverse_proxy_ctid }}"
-  when: "front_container_running.stdout == 'running'"
-
-- name: "<{{ item }}> Set SSL mountpoints"
-  command: "pct set {{ reverse_proxy_ctid }} -mp0 /mnt/pve/nfs-ssl,mp=/home/user-data/ssl"
-
-- name: "<{{ item }}> Start front container"
-  command: "pct start {{ reverse_proxy_ctid }}"
-  ignore_errors: yes
-  when: "front_container_running.stdout == 'running'"
 ...
 

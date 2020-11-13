@@ -1,0 +1,11 @@
+image: alpine-3.11-default_20200425_amd64.tar.xz
+ostype: alpine
+disk_size: 8
+cpu_cores: 1
+cpu_units: 1024
+memory: 256
+swap: 256
+firewall_file: firewall.j2
+redirected_ports: []
+allow_ssh: yes
+

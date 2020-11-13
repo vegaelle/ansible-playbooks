@@ -23,20 +23,4 @@
   include_role:
     name: "{{ host.role }}"
     tasks_from: container
-# - name: Create public dir
-#   file:
-#     path: "/{{ hostvars[item] }}.pool/subvol/{{ ctid }}-disk-0/srv/public"
-#     state: directory
-# - name: Create container symlink
-#   file:
-#     src: "/{{ hostvars[item].pool }}/subvol-{{ ctid }}-disk-0"
-#     dest: "/var/containers/{{ item }}"
-#     state: link
-# - name: Create role symlink
-#   file:
-#     src: "/var/containers/{{ item }}"
-#     dest: "/var/containers/{{ role }}"
-#     state: link
-#   when: "role in ['miab', 'http']"
-
 ...

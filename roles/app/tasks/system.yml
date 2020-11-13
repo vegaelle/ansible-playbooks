@@ -14,24 +14,6 @@
     dest: /etc/localtime
     remote_src: yes
 
-- name: Install nfs
-  apk:
-    name: nfs-utils
-
-- name: Set up NFS mounts
-  template:
-    src: templates/exports
-    dest: /etc/exports
-
-- name: Start nfs
-  service:
-    name: nfs
-    state: started
-    runlevel: default
-
-- name: Force activation of NFS service
-  command: "rc-update add nfs default"
-
 - name: Install opensmtpd
   apk:
     name: opensmtpd
@@ -58,46 +40,10 @@
     dest: /etc/smtpd/secrets
     mode: "0640"
 
-# - name: Convert secrets to db format
-#   command: "makemap /etc/smtpd/secrets"
-
 - name: Start smtpd
   service:
     name: smtpd
     state: started
     runlevel: default
-
-# - name: Install node-exporter
-#   apk:
-#     name: prometheus-node-exporter
-#     update_cache: yes
-#     repository:
-#       - http://dl-cdn.alpinelinux.org/alpine/edge/community
-#       - http://dl-cdn.alpinelinux.org/alpine/v3.10/main
-#       - http://dl-cdn.alpinelinux.org/alpine/v3.10/community
-
-# - name: Create node_exporter run dir
-#   file:
-#     path: /var/run/prometheus
-#     state: directory
-#     owner: prometheus
-#     group: prometheus
-
-# - name: Make Node Exporter listen on localhost only
-#   template:
-#     src: templates/default_node_exporter
-#     dest: /etc/default/prometheus-node-exporter
-#   register: prometheus_default_conf
-
-# - name: Start Node Exporter
-#   service:
-#     name: node-exporter
-#     state: started
-
-# - name: Restart Node Exporter
-#   service:
-#     name: node-exporter
-#     state: restarted
-#   when: prometheus_default_conf.changed
 
 ...

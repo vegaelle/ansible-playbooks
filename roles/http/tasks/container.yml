@@ -30,16 +30,6 @@
   command: "pct exec {{ ctid }} /etc/init.d/networking restart"
   when: bridge_task.changed
 
-- name: "<{{ item }}> Create public dir"
-  file:
-    path: /srv/public
-    state: directory
-
-- name: "<{{ item }}> Create snippets subdir (for pvesm support)"
-  file:
-    path: /srv/public/snippets
-    state: directory
-
 - name: "<{{ item }}> Create Let’s Encrypt dir"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"

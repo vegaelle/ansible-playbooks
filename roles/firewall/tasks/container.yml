@@ -60,6 +60,11 @@
     - http
     - miab
     - osp
+    - mastodon
+    - matrix
+    - funkwhale
+    - wordpress
+    - static
   loop_control:
     loop_var: role_name
 
@@ -69,6 +74,11 @@
       http: "{{ http }}"
       miab: "{{ miab }}"
       osp: "{{ osp }}"
+      mastodon: "{{ mastodon }}"
+      matrix: "{{ matrix }}"
+      funkwhale: "{{ funkwhale }}"
+      wordpress: "{{ wordpress }}"
+      static: "{{ static }}"
 
 # - name: Add sysctl conf
 #   copy:

@@ -83,7 +83,6 @@
     --net0=name=eth0,bridge=vmbr0,firewall=0{% if vlan != '0' %},tag={{ vlan }}{% endif %},ip=10.0.{{ vlan }}.{{ ctid }}/24,gw={% if vlan != '0' %}10.0.{{ vlan }}.1{% else %}{{ firewall_public_ip }}{% endif %},ip6={{ public_ip6[:17] }}{{ ctid | hex }}:7665:6761:6e62:7477/64,gw6={{ firewall_public_ip6[:17] }}{{ ctid | hex }}::2
     {% endif %}
     --onboot=0 --ostype={{ ostype }} --start=0 --swap={{ swap }}
-    --features mount=nfs,nesting=1
     --rootfs volume=root-{{ ctid }}:subvol-{{ ctid }}-disk-0,size={{ disk_size }}
   args:
     creates: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/bin"
@@ -91,16 +90,6 @@
 - name: "<{{ item }}> Copy CT conf file"
   command: "cp /etc/pve/lxc/{{ ctid }}.conf /root/tmp-{{ ctid }}.conf"
   when: ostype == 'alpine'
-
-# - name: "<{{ item }}> Create mountpoint for front"
-#   blockinfile:
-#     path: "/root/tmp-{{ ctid }}.conf"
-#     block: |
-#       mp0: /mnt/pve/,mp=/var/www/vhosts
-#       mp1: /mnt/pve/nfs-ssl,mp=/home/user-data/ssl:
-#     marker: "# {mark} ANSIBLE MANAGED BLOCK FRONT MOUNTPOINTS"
-#   when: role == 'http'
-#   register: 'mountpoints_changed'
 
 # thanks to https://unix.stackovernet.com/fr/q/108786
 - name: "<{{ item }}> Fix pcap for alpine"
@@ -143,7 +132,7 @@
 - name: "<{{ item }}> Set shell prompt for container"
   lineinfile:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/profile"
-    line: "export PS1='[{{ ctid }}]\\h:\\w\\$ '"
+    line: "export PS1='[{{ ctid }}]\\u@\\h:\\w\\$ '"
     regexp: "^export PS1="
 
 - name: "<{{ item }}> Load /etc/profile from container"
@@ -151,26 +140,33 @@
     src: templates/profile
     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/root/.profile"
 
-# - name: "<{{ item }}> Add firewall rules"
-#   template:
-#     src: "{{ firewall_file }}"
-#     dest: "/root/tmp-{{ ctid }}.fw"
-#     owner: root
-#   when: role != 'firewall'
+- name: "<{{ item }}> Register hook script"
+  command: "pct set {{ ctid }} -hookscript local:snippets/hook_script.py"
+  when: hostvars[item].role != 'firewall'
 
-# - name: "<{{ item }}> Copy firewall rules"
-#   # copy:
-#   #   remote_src: yes
-#   #   src: "/root/tmp/{{ ctid }}.fw"
-#   #   dest: "/etc/pve/firewall/{{ ctid }}.fw"
-#   command: "cp /root/tmp-{{ ctid }}.fw /etc/pve/firewall/{{ ctid }}.fw"
-#   when: role != 'firewall'
+- name: "<{{ item }}> Create public dir"
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+    state: directory
 
-# - name: "<{{ item }}> Remove tmp file"
-#   file:
-#     path: "/root/tmp-{{ ctid }}.fw"
-#     state: absent
-#   when: role != 'firewall'
+- name: "<{{ item }}> Create public dir (reverse proxy)"
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/var/{{ dir }}"
+    state: directory
+    recurse: yes
+  loop:
+      - var/www/vhosts
+      - home/user-data/ssl
+  loop_control:
+    loop_var: dir
+  when: hostvars[item].role == 'http'
+
+- name: "<{{ item }}> Create public dir (miab)"
+  file:
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/home/user-data/ssl"
+    state: directory
+    recurse: yes
+  when: hostvars[item].role == 'miab'
 
 - name: "<{{ item }}> Get container state"
   shell: "pct list | grep {{ ctid }} | awk '{print $2}'"
@@ -211,12 +207,6 @@
 - name: "<{{ item }}> Create public dir in container"
   file:
     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
-    state: directory
-  when: role != 'http'
-
-- name: "<{{ item }}> Create snippets subdir (for pvesm support)"
-  file:
-    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/snippets"
     state: directory
   when: role != 'http'
 ...

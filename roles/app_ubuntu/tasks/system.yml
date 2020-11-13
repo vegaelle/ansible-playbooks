@@ -13,48 +13,9 @@
 - name: Generate locale
   command: locale-gen en_US.UTF-8
 
-- name: Install nfs
-  apt:
-    name: nfs-kernel-server
-    update_cache: yes
-
-- name: Set up NFS mounts
-  template:
-    src: templates/exports
-    dest: /etc/exports
 
 - name: Disable firewall
   command: "ufw disable"
-#- name: Setup NFS firewall rules
-#  blockinfile:
-#    path: "/etc/ufw/user.rules"
-#    block: |
-#      ### tuple ### allow tcp 111 0.0.0.0/0 any 0.0.0.0/0 in
-#      -A ufw-user-input -p tcp --dport 111 -j ACCEPT
-
-#      ### tuple ### allow udp 111 0.0.0.0/0 any 0.0.0.0/0 in
-#      -A ufw-user-input -p udp --dport 111 -j ACCEPT
-#      #
-#      ### tuple ### allow tcp 2049 0.0.0.0/0 any 0.0.0.0/0 in
-#      -A ufw-user-input -p tcp --dport 2049 -j ACCEPT
-
-#      ### tuple ### allow udp 2049 0.0.0.0/0 any 0.0.0.0/0 in
-#      -A ufw-user-input -p udp --dport 2049 -j ACCEPT
-#    insertbefore: "### END RULES ###"
-
-## - name: Enable firewall
-##   command: "ufw enable"
-
-#- name: Restart firewall
-#  service:
-#    name: ufw
-#    state: restarted
-
-- name: Start nfs
-  service:
-    name: nfs-kernel-server
-    state: started
-    runlevel: default
 
 - name: Install opensmtpd
   apt:
@@ -76,28 +37,9 @@
     dest: /etc/smtpd/secrets
     mode: "0640"
 
-# - name: Convert secrets to db format
-#   command: "makemap /etc/smtpd/secrets"
-
 - name: Start smtpd
   service:
     name: opensmtpd
     state: started
     runlevel: default
-
-# - name: Install node-exporter
-#   apt:
-#     name: prometheus-node-exporter
-
-# - name: Create node_exporter run dir
-#   file:
-#     path: /var/run/prometheus
-#     state: directory
-#     owner: prometheus
-#     group: prometheus
-
-# - name: Start Node Exporter
-#   service:
-#     name: prometheus-node-exporter
-#     state: started
 ...

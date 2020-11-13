@@ -71,35 +71,6 @@
       ignore_errors: yes
       when: host_vars.role not in ('http', 'firewall', 'miab')
 
-    # - name: Reload NFS mountpoints
-    #   command: "pct exec {{ reverse_proxy_ctid }} umount /var/www/nginx/{{ host }}/docroot"
-    #   ignore_errors: yes
-    #   when: "host_vars.role not in ('http', 'miab', 'firewall')"
-
-    # - name: Remove NFS mountpoints
-    #   file:
-    #     path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/var/www/nginx/{{ host }}/docroot"
-    #     state: absent
-    #   when: "host_vars.role not in ('http', 'miab', 'firewall')"
-
-    # - name: Reload NFS mountpoints
-    #   command: "pct exec {{ reverse_proxy_ctid }} umount /home/user-data/ssl"
-    #   ignore_errors: yes
-    #   when: "host_vars.role == 'miab'"
-
-    # - name: Unmount NFS mountpoint
-    #   lineinfile:
-    #     path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/etc/fstab"
-    #     state: absent
-    #     regexp: '^10.0.{{ host_vars.vlan }}.{{ ctid }}'
-
-    # - name: Unmount NFS mountpoint
-    #   lineinfile:
-    #     path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/etc/fstab"
-    #     state: absent
-    #     regexp: '^# {{ host }}'
-    #
-
     - name: Check if front CT still exists
       shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ reverse_proxy_ctid }}.conf | wc -l"
       register: front_config_exists
@@ -109,79 +80,26 @@
       register: front_ct_status
       when: "front_config_exists.stdout == '1' and host_vars.role != 'http'"
 
-    - name: Stop nginx on front container
-      command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx stop"
-      ignore_errors: true
-      when: "front_config_exists.stdout == '1' and host_vars.role != 'http' and 'running' in front_ct_status.stdout"
-
     - name: Remove nginx vhost
       file:
         path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/etc/nginx/conf.d/10.{{ host }}.conf"
         state: absent
       when: "front_config_exists.stdout == '1' and host_vars.role != 'http'"
 
-    - name: Stop front container
-      command: "pct stop {{ reverse_proxy_ctid }}"
+    - name: Remove mountpoint from nginx
+      file: 
+        path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/var/www/vhosts/{{ host }}"
+        state: absent
+      when: "front_config_exists.stdout == '1'"
+
+    - name: Reload nginx on front container
+      command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx reload"
+      ignore_errors: true
       when: "front_config_exists.stdout == '1' and host_vars.role != 'http' and 'running' in front_ct_status.stdout"
-
-    - name: Unmount NFS share
-      command: "umount /mnt/pve/nfs-{{ ctid }}"
-      ignore_errors: yes
-      when: "host_vars.role not in ('http', 'miab', 'firewall')"
-
-    - name: Remove mountpoint from front
-      command: "sed -i '#/mnt/pve/nfs-{{ ctid }}#d' /etc/pve/lxc/{{ reverse_proxy_ctid }}.conf"
-      # lineinfile:
-      #   path: "/etc/pve/lxc/{{ reverse_proxy_ctid }}.conf"
-      #   regexp: "/mnt/pve/nfs-{{ ctid }}"
-      #   state: absent
-
-    - name: Delete NFS share
-      command: "pvesm remove nfs-{{ ctid }}"
-      ignore_errors: yes
-      when: "host_vars.role not in ('http', 'miab', 'firewall')"
-
-    - name: Unmount NFS share (ssl)
-      command: "umount /mnt/pve/nfs-ssl"
-      ignore_errors: yes
-      when: "host_vars.role == 'miab'"
-
-    - name: Delete NFS share (ssl)
-      command: "pvesm remove nfs-ssl"
-      ignore_errors: yes
-      when: "host_vars.role == 'miab'"
-
-    - name: Stop NFS server
-      command: "pct exec {{ ctid }} /etc/init.d/nfs stop"
-      ignore_errors: yes
-      when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
-
-    - name: Stop NFS server
-      command: "pct exec {{ ctid }} systemctl stop nfs-kernel-server"
-      ignore_errors: yes
-      when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
 
     - name: Stop container
       command: "pct stop {{ ctid }}"
       when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
-
-    - name: Start back front container
-      command: "pct start {{ reverse_proxy_ctid }}"
-      when: "front_config_exists.stdout == '1' and host_vars.role != 'http' and 'running' in front_ct_status.stdout"
-
-    # - name: Umount public dir
-    #   debug:
-    #     msg: TODO
-
-    # - name: Umount certs dir
-    #   command: "umount /var/containers/http/home/user-data/ssl"
-    #   ignore_errors: true
-    #   when: host_vars.role in ('http', 'miab')
-
-    # - name: Umount challenges dir
-    #   command: "umount /var/containers/http/var/letsencrypt/docroot"
-    #   ignore_errors: true
-    #   when: host_vars.role in ('http', 'miab')
 
     - name: Delete container
       command:
@@ -210,31 +128,16 @@
         cmd: "zfs destroy -r {{ host_vars['pool'] }}"
         removes: "/rpool/data/encrypted-{{ ctid }}"
 
-    # - name: Remove firewall rules
-    #   file:
-    #     path: "/etc/pve/firewall/{{ ctid }}.fw"
-    #     state: absent
+    - name: Remove host mountpoint
+      file:
+        path: "/mnt/binds/{{ ctid }}-srv-public"
+        state: absent
 
-    # TODO: fix this for firewall
-    # - name: Check if VLAN is unused
-    #   shell: "grep -c 'tag-{{ host_vars['vlan'] }}' /etc/pve/lxc/* | grep -v ':0$' | echo -n"
-    #   register: vlan_uses
-
-    # - name: Shutdown VLAN
-    #   command: "ifdown vmbr1.{{ host_vars['vlan'] }}"
-    #   when: "vlan_uses.stdout|int >= 1"
-
-    # - name: Remove VLAN
-    #   file:
-    #     path: "/etc/network/interfaces.d/vmbr1.{{ host_vars['vlan'] }}.conf"
-    #     state: absent
-    #   when: "vlan_uses.stdout|int >= 1"
-
-    # - name: Remove ports redirections
-    #   shell: "grep -R {{ host }} /etc/network/ports.d/post-down | awk -F '{ print $1 }' | xargs bash; :"
-
-    # - name: Remove ports redirections configs
-    #   shell: "grep -R {{ host }} /etc/network/ports.d/ | awk -F '{ print $1 }' | xargs rm; :"
+    - name: Remove host mountpoint (for miab)
+      file:
+        path: "/mnt/binds/{{ ctid }}-home-user-data-ssl"
+        state: absent
+      when: hostvars[ctid].role == 'miab'
 
 # - name: Remove backup account
 #   hosts: backup

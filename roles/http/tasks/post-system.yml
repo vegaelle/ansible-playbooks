@@ -1,9 +1,4 @@
 ---
-# - name: Create sites docroots
-#   file:
-#     path: "/var/www/vhosts/{{ item }}/docroot"
-#     state: directory
-#   loop: "{{ groups['containers'] }}"
 
 - name: Create sites config
   template:
@@ -29,34 +24,6 @@
     group: nginx
     password: "{{ prometheus_exporter_auth }}"
 
-# - name: Create docroot dirs
-#   file:
-#     path: "/var/www/{{ item }}/docroot"
-#     state: directory
-#   loop: "{{ groups['containers'] }}"
-#   when: "item != inventory_hostname"
-
-# - name: Enable nfsmount
-#   service:
-#     name: nfsmount
-#     state: started
-#     enabled: no
-
 - name: Copy private key
   command: "bash /root/copy-certs.sh"
-  # copy:
-  #   src: /home/user-data/ssl/ssl_private_key.pem
-  #   dest: /etc/ssl/letsencrypt/ssl_private_key.pem
-  #   remote_src: yes
-
-# - name: Copy certs
-  # copy:
-  #   src: /home/user-data/ssl/ssl_certificate.pem
-  #   dest: /etc/ssl/letsencrypt/ssl_certificate.pem
-  #   remote_src: yes
-
-# - name: Reload nginx
-  # service:
-  #   name: nginx
-  #   state: reloaded
 ...

@@ -100,7 +100,7 @@
 
 - name: Create SSL mountpoint
   file:
-    path: /home/user-data/ssl/snippets
+    path: /home/user-data/ssl
     state: directory
     recurse: yes
 
@@ -122,55 +122,5 @@
     minute: "0"
     hour: "0,12"
     job: "bash /root/copy-certs.sh"
-
-# - name: Create SSL challenges dir
-#   file:
-#     path: /var/letsencrypt/docroot
-#     state: directory
-
-# - name: Install nfs
-#   apk:
-#     name: nfs-utils
-
-# - name: Install rpcbind
-#   apk:
-#     name: rpcbind
-
-# - name: Set up NFS mounts
-#   template:
-#     src: templates/fstab
-#     dest: /etc/fstab
-# - name: Install node-exporter
-#   apk:
-#     name: prometheus-node-exporter
-#     repository:
-#       - http://dl-cdn.alpinelinux.org/alpine/edge/testing
-#       - http://dl-cdn.alpinelinux.org/alpine/edge/community
-#       - http://dl-cdn.alpinelinux.org/alpine/v3.11/main
-#       - http://dl-cdn.alpinelinux.org/alpine/v3.11/community
-
-# - name: Create node_exporter run dir
-#   file:
-#     path: /var/run/prometheus
-#     state: directory
-#     owner: prometheus
-#     group: prometheus
-
-# # - name: Make Node Exporter listen on localhost only
-# #   template:
-# #     src: templates/default_node_exporter
-# #     dest: /etc/default/prometheus-node-exporter
-# #   register: prometheus_default_conf
-
-# - name: Start Node Exporter
-#   service:
-#     name: node-exporter
-#     state: started
-
-# # - name: Restart Node Exporter
-# #   service:
-# #     name: node-exporter
-# #     state: restarted
-# #   when: prometheus_default_conf.changed
 
 ...

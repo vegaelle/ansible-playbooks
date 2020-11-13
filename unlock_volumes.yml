@@ -3,26 +3,6 @@
   remote_user: root
 
   tasks:
-    # - name: Load ZFS key
-    #   command: "zfs load-key {{ item.pool }}"
-    #   args:
-    #     stdin: "{{ item.passphrase }}"
-    #   loop: "{{ zfs_volumes.values() | list }}"
-
-    # - name: Mount ZFS volumes
-    #   command: "zfs mount {{ item }}"
-    #   # debug:
-    #   #   msg: "zfs mount {{ item.1 }}"
-    #   loop: "{{ zfs_volumes | get_zvolumes }}"
-
-    #   # - name: Mount public dirs
-
-    # - name: Start containers
-    #   command: "pct start {{ item.ctid }}"
-    #   # debug:
-    #   #   msg: "pct start {{ item.1.ctid }}"
-    #   loop: "{{ zfs_volumes | get_containers }}"
-
     - name: Get reverse proxy facts
       set_fact:
         reverse_proxy_ip: "10.0.{{ hostvars[node].vlan }}.{{ hostvars[node].ctid }}"
@@ -35,18 +15,6 @@
     - name: Unlock container
       include: tasks/unlock_volume.yml
       loop: "{{ groups['containers'] }}"
-
-    # - name: Load firewall rules
-    #   shell: "bash /etc/network/ports.d/post-up/*.conf"
-
-    # - name: Start NFS mounts
-    #   command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nfsmount start"
-
-    # - name: Create bind-mount for SSL certs
-    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl /var/containers/http/home/user-data/ssl"
-
-    # - name: Create bind-mount for Let’s Encrypt challenges
-    #   command: "mount -o bind /var/containers/miab/home/user-data/ssl/lets_encrypt/webroot /var/containers/http/var/letsencrypt/docroot"
 
     - name: Start nginx
       command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx start"

@@ -5,7 +5,7 @@ upstream {{ item }}-upstream {
 server {
     listen 80;
     listen [::]:80;
-    server_name  {{ item }} {{ item }};
+    server_name  {{ item }} www.{{ item }};
 
     include letsencrypt.conf;
 

@@ -18,51 +18,10 @@
 
 - name: Create public dir
   file:
-    path: "{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public/snippets"
+    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
     state: directory
     recurse: yes
 
 - name: Update apt
   command: "pct exec {{ ctid }} -- apt update"
-
-- name: Install nfs
-  command: "pct exec {{ ctid }} -- apt install -y nfs-kernel-server"
-
-- name: Set up NFS mounts
-  template:
-    src: templates/exports
-    dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/exports"
-
-- name: Start nfs
-  command: "pct exec {{ ctid }} -- systemctl reload nfs-kernel-server"
-
-- name: Check if NFS storage exists
-  shell: "pvesm status | grep nfs-{{ ctid }} | wc -l"
-  register: storage_exists
-
-- name: Create NFS storage
-  command: "pvesm add nfs nfs-{{ ctid }} --export /srv/public --path /mnt/pve/nfs-{{ ctid }} --server 10.0.{{ vlan }}.{{ ctid }} --content snippets"
-  ignore_errors: yes
-  when: storage_exists.stdout == '0'
-
-- name: Get front container state
-  shell: "pct list | grep {{ reverse_proxy_ctid }} | awk '{print $2}'"
-  register: front_container_running
-
-- name: Stop nginx in front container
-  command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx stop"
-  ignore_errors: yes
-  when: "front_container_running.stdout == 'running'"
-
-- name: Stop front container (to apply mountpoint config)
-  command: "pct stop {{ reverse_proxy_ctid }}"
-  when: "front_container_running.stdout == 'running'"
-
-- name: Set mountpoint
-  command: "pct set {{ reverse_proxy_ctid }} -mp{{ inventory_index }} /mnt/pve/nfs-{{ ctid }},mp=/var/www/vhosts/{{ item }}"
-
-- name: Start front container
-  command: "pct start {{ reverse_proxy_ctid }}"
-  ignore_errors: yes
-  when: "front_container_running.stdout == 'running'"
 ...

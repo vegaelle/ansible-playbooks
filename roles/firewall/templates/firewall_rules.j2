@@ -19,7 +19,9 @@ COMMIT
 # [0:0] -A POSTROUTING -s 10.0.0.1/32 -o eth1 -j MASQUERADE
 [0:0] -A POSTROUTING -s 10.0.0.0/16 -o eth0 -j MASQUERADE
 {% for container in groups['containers'] %}
+{% if hostvars[container].role in roles_vars and 'allow_ssh' in roles_vars[hostvars[container].role] and roles_vars[hostvars[container].role].allow_ssh %}
 [0:0] -A PREROUTING -d {{ firewall_public_ip }} -p tcp --dport 22{{ hostvars[container].ctid }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}:22
+{% endif %}
 {% if hostvars[container].role in roles_vars %}
 # ports redirections for {{ container }}
 {% for port in roles_vars[hostvars[container].role].redirected_ports %}
