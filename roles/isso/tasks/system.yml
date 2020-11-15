@@ -1,0 +1,103 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+- name: Create www-data user
+  user:
+    name: www-data
+    groups: www-data
+    home: /srv
+    shell: /bin/sh
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+- name: Install system dependencies
+  apk:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - build-base
+    - python3-dev
+    - libffi-dev
+    - git
+
+- name: Install Isso
+  pip:
+    # name: isso
+    # state: latest
+    name: git+https://github.com/redradishtech/isso.git
+
+- name: Create Isso dir
+  file:
+    path: /srv/isso
+    state: directory
+    owner: www-data
+    group: www-data
+
+- name: Create Isso config
+  template:
+    src: templates/isso.conf
+    dest: /srv/isso/isso.conf
+    owner: www-data
+    group: www-data
+
+- name: Install uwsgi
+  apk:
+    name: uwsgi-python3
+    state: present
+
+- name: Install supervisor
+  apk:
+    name: supervisor
+
+- name: Configure supervisor
+  template: 
+    src: templates/supervisord.j2
+    dest: /etc/supervisord.conf
+
+- name: Create log directory
+  file:
+    path: /var/log/isso
+    state: directory
+
+- name: Configure uwsgi
+  template: 
+    src: templates/uwsgi.j2
+    dest: /srv/uwsgi.ini
+
+- name: Start supervisord
+  service:
+    name: supervisord
+    state: started
+    runlevel: default
+
+- name: Reread supervisord
+  command: supervisorctl reread
+
+- name: Reload supervisord
+  command: supervisorctl reload
+
+...
+

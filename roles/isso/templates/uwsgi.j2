@@ -1,0 +1,9 @@
+[uwsgi]
+socket = :8000
+module = isso.run
+env = ISSO_SETTINGS=/srv/isso/isso.conf
+processes = 4
+threads = 2
+stats = 127.0.0.1:9191
+plugins = python3
+

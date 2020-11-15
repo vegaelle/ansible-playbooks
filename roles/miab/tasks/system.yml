@@ -27,6 +27,11 @@
   apt:
     name: curl
 
+- name: Reset changes to Mailinabox
+  command: "git checkout management/ssl_certificates.py"
+  args:
+    chdir: "/root/mailinabox"
+
 - name: Install Mailinabox
   shell: "curl -s https://mailinabox.email/setup.sh | bash"
   environment: "{{ miab_env }}"

@@ -26,9 +26,16 @@
       {% endfor %}
   register: bridge_task
 
-- name: "<{{ item }}> Restart container networking to enable vlans"
-  command: "pct exec {{ ctid }} /etc/init.d/networking restart"
-  when: bridge_task.changed
+# - name: "<{{ item }}> Restart container networking to enable vlans"
+#   command: "pct exec {{ ctid }} /etc/init.d/networking restart"
+#   when: bridge_task.changed
+
+- name: Enable new interfaces
+  command: "pct exec {{ ctid }} ifup eth0.{{ hostvars[ct].vlan }}"
+  loop: "{{ groups['containers'] }}"
+  loop_control:
+    loop_var: ct
+  when: bridge_task.changed and hostvars[ct].vlan != '0'
 
 - name: "<{{ item }}> Create Let’s Encrypt dir"
   file:

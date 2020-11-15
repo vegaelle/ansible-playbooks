@@ -65,6 +65,8 @@
     - funkwhale
     - wordpress
     - static
+    - isso
+    - notebook
   loop_control:
     loop_var: role_name
 
@@ -79,6 +81,8 @@
       funkwhale: "{{ funkwhale }}"
       wordpress: "{{ wordpress }}"
       static: "{{ static }}"
+      isso: "{{ isso }}"
+      notebook: "{{ notebook }}"
 
 # - name: Add sysctl conf
 #   copy:

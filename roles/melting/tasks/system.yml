@@ -91,10 +91,6 @@
   become: yes
   become_user: www-data
 
-- name: Install uwsgi
-  apk:
-    name: uwsgi,uwsgi-python3
-
 - name: Install supervisor
   apk:
     name: supervisor
@@ -108,11 +104,6 @@
   file:
     path: /var/log/meltingpotes
     state: directory
-
-- name: Configure uwsgi
-  template: 
-    src: templates/uwsgi.j2
-    dest: /srv/uwsgi.ini
 
 - name: Start supervisord
   service:

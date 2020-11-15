@@ -1,3 +1,7 @@
+upstream {{ item }}-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:8000;
+}
+
 server {
     listen 80;
     listen [::]:80;
@@ -14,19 +18,22 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
     server_name {{ item }} www.{{ item }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
 
     ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
-
-    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'{% if 'comments_domain' in hostvars[item] %} {{ hostvars[item].comments_domain }}; connect-src {{ hostvars[item].comments_domain }}{% endif %}; object-src 'self'";
 
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;
 
     root /var/www/vhosts/{{ item }};
     index index.htm index.html;
+
+    location / {
+        uwsgi_pass {{ item }}-upstream;
+        include uwsgi_params;
+    }
 }
-{% if 'external_dns' not in hostvars[item] or not hostvars[item].external_dns %}
 
 server {
     listen 443 ssl;
@@ -48,4 +55,5 @@ server {
         proxy_pass https://miab-upstream/;
     }
 }
-{% endif %}
+
+
