@@ -1,0 +1,140 @@
+---
+- name: Setup system
+  include_role:
+    name: app_ubuntu
+    tasks_from: system
+
+- name: Install pip
+  apt:
+    name: python3-pip
+
+# - name: Create PHP user
+#   user:
+#     name: www
+#     groups: www
+#     home: /srv/public
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - acl
+    - texlive
+    - texlive-latex-extra
+    - texlive-xetex
+    - pandoc
+    - python3-numpy
+    - python3-pandas
+    - python3-matplotlib
+    - sqlite3
+    - vim
+    - nodejs
+    - npm
+    - git
+
+- name: Install python dependencies
+  pip:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - beautifulsoup4
+    - jupyterhub
+    - jupyterlab
+    - ipywidgets
+    - requests
+    - sqlalchemy
+    - bash-kernel
+    - jupyter-lsp
+    - "python-language-server[all]"
+    # - ipykernel
+
+- name: Install configurable-http-proxy
+  npm:
+    name: configurable-http-proxy
+    state: latest
+    global: yes
+
+- name: Create configuration for jupyterhub
+  file:
+    path: /etc/jupyterhub
+    state: directory
+
+- name: Copy Jupyterhub configuration
+  template:
+    src: templates/jupyterhub_config.py
+    dest: /etc/jupyterhub/jupyterhub_config.py
+
+- name: Create working directory for jupyterhub
+  file:
+    path: /srv/jupyterhub
+    state: directory
+
+- name: Update $PATH
+  lineinfile:
+    path: /root/.bashrc
+    line: "PATH=/usr/local/bin:$PATH"
+    regexp: "^PATH="
+
+# - name: Create template user
+#   user:
+#     name: template
+#     state: present
+
+- name: Create user
+  user:
+    name: prof
+    state: present
+    shell: /bin/bash
+
+- name: Copy systemd files
+  template:
+    src: templates/jupyterhub.service
+    dest: "/lib/systemd/system/jupyterhub.service"
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+    name: jupyterhub.service
+    state: started
+    enabled: yes
+
+- name: Install jupyterhub jupyterlab extension
+  command: "/usr/local/bin/jupyter serverextension enable jupyterlab"
+
+- name: Install jupyterlab-lsp
+  command: "/usr/local/bin/jupyter labextension install @krassowski/jupyterlab-lsp"
+
+- name: Update jupyterlab-lsp
+  command: "/usr/local/bin/jupyter labextension update @krassowski/jupyterlab-lsp"
+
+- name: Build Jupyter lab
+  command: "/usr/local/bin/jupyter lab build"
+
+- name: Restart jupyterhub
+  service:
+    name: jupyterhub
+    state: restarted
+
+- name: Create skel structure
+  file:
+    path: "/etc/skel/{{ item }}"
+    recurse: yes
+    state: directory
+  loop:
+    - notebooks
+    - supports
+...

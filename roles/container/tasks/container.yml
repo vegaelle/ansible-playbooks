@@ -10,6 +10,14 @@
     stdin: "{{ passphrase }}"
     creates: "/{{ zfs_volume }}"
 
+- name: "<{{ item }}> Set ZFS options"
+  command: "zfs set {{ opt }} {{ zfs_volume }}"
+  loop:
+    - "xattr=sa"
+    - "acltype=posixacl"
+  loop_control:
+    loop_var: opt
+
 # - name: "<{{ item }}> Mount ZFS volume"
 #   command: "zfs mount {{ zfs_volume }}"
 #

@@ -58,7 +58,7 @@ def mount(ctid: str, src:str='/srv/public',
 
 
 def umount(ctid: str, src:str='/srv/public',
-           dest:str='/var/www/vhosts2/{hostname}', verbose:bool=False):
+           dest:str='/var/www/vhosts/{hostname}', verbose:bool=False):
     if verbose:
         dest_with_hostname = dest.format(hostname=HOSTNAMES[ctid])
         print(f'Unmounting {ctid}:{src} from {dest_with_hostname}')

@@ -1,7 +1,7 @@
 image: ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
 ostype: ubuntu
 disk_size: 128
-cpu_cores: 1
+cpu_cores: 2
 cpu_units: 1024
 memory: 2048
 swap: 1024

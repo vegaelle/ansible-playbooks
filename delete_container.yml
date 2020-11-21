@@ -86,12 +86,6 @@
         state: absent
       when: "front_config_exists.stdout == '1' and host_vars.role != 'http'"
 
-    - name: Remove mountpoint from nginx
-      file: 
-        path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/var/www/vhosts/{{ host }}"
-        state: absent
-      when: "front_config_exists.stdout == '1'"
-
     - name: Reload nginx on front container
       command: "pct exec {{ reverse_proxy_ctid }} /etc/init.d/nginx reload"
       ignore_errors: true
@@ -100,6 +94,12 @@
     - name: Stop container
       command: "pct stop {{ ctid }}"
       when: "config_exists.stdout == '1' and 'status: running' in ct_status.stdout"
+
+    - name: Remove mountpoint from nginx
+      file: 
+        path: "/rpool/data/encrypted-{{ reverse_proxy_ctid }}/subvol-{{ reverse_proxy_ctid }}-disk-0/var/www/vhosts/{{ host }}"
+        state: absent
+      when: "front_config_exists.stdout == '1'"
 
     - name: Delete container
       command:
@@ -137,7 +137,7 @@
       file:
         path: "/mnt/binds/{{ ctid }}-home-user-data-ssl"
         state: absent
-      when: hostvars[ctid].role == 'miab'
+      when: host_vars['role'] == 'miab'
 
 # - name: Remove backup account
 #   hosts: backup
