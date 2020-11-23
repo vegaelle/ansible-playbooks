@@ -3,6 +3,8 @@
   set_fact:
     allow_ssh: no
     firewall_file: firewall_http.j2
+    metrics:
+      nginx: 9145
 - name: "<{{ item }}> Setup container"
   include_role:
     name: container

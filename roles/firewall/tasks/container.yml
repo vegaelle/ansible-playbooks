@@ -28,67 +28,11 @@
   template:
     src: templates/interfaces.j2
     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
-  # blockinfile:
-  #   path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/network/interfaces"
-  #   block: |
-  #     {% for host in groups['containers'] %}
-  #     {% if hostvars[host].vlan != '0' %}
-  #     auto eth0.{{ hostvars[host].vlan }}
-  #     iface eth0.{{ hostvars[host].vlan }} inet static
-  #         address 10.0.{{ hostvars[host].vlan }}.1
-  #         netmask 255.255.255.0
-  #         post-up ip r a 10.0.{{ hostvars[host].vlan }}.0/24 dev eth0.{{ hostvars[host].vlan }}
-
-  #     iface eth0.{{ hostvars[host].vlan }} inet6 static
-  #         address {{ public_ip6[:17] }}{{ ctid | hex }}::2
-  #         netmask 64
-  #         post-up ip r a {{ public_ip6[:17] }}{{ hostvars[host].vlan | hex }}::/64 dev eth0.{{ hostvars[host].vlan }}
-
-  #     {% endif %}
-  #     {% endfor %}
   register: bridge_task
 
 - name: Restart container networking to enable vlans
   command: "pct exec {{ ctid }} /etc/init.d/networking restart"
   when: bridge_task.changed
-
-- name: Fetch role vars (for firewall ports)
-  include_vars:
-    file: "{{ playbook_dir }}/roles/{{ role_name }}/defaults/main.yml"
-    name: "{{ role_name }}"
-  loop:
-    - http
-    - miab
-    - osp
-    - mastodon
-    - matrix
-    - funkwhale
-    - wordpress
-    - static
-    - isso
-    - notebook
-  loop_control:
-    loop_var: role_name
-
-- name: Set roles vars fact
-  set_fact:
-    roles_vars:
-      http: "{{ http }}"
-      miab: "{{ miab }}"
-      osp: "{{ osp }}"
-      mastodon: "{{ mastodon }}"
-      matrix: "{{ matrix }}"
-      funkwhale: "{{ funkwhale }}"
-      wordpress: "{{ wordpress }}"
-      static: "{{ static }}"
-      isso: "{{ isso }}"
-      notebook: "{{ notebook }}"
-
-# - name: Add sysctl conf
-#   copy:
-#     src: files/sysctl.conf
-#     dest: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/etc/sysctl.d/01-firewall.conf"
-#     remote_src: no
 
 - name: Add iptables rules
   template:

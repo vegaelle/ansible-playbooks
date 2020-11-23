@@ -34,6 +34,8 @@ server {
     keepalive_timeout    70;
     sendfile             on;
     large_client_header_buffers 4 8k;
+    proxy_buffers 16 16k;
+    proxy_buffer_size 16k;
 
     add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: registry.npmjs.org github.com *.githubusercontent.com unpkg.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'self' blob:; worker-src 'self';";
     limit_conn miab 100;

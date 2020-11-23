@@ -38,9 +38,23 @@
   loop:
     - prometheus-node-exporter
     - prometheus
+    - prometheus-alertmanager
+    - prometheus-blackbox-exporter
     - grafana
     - python-certbot-nginx
     - nginx
+
+- name: Make Blackbox Exporter listen on localhost only
+  template:
+    src: templates/default_blackbox_exporter
+    dest: /etc/default/prometheus-blackbox-exporter
+  register: blackbox_exporter_default_conf
+
+- name: Restart Blackbox Exporter
+  service:
+    name: prometheus-blackbox-exporter
+    state: restarted
+  when: blackbox_exporter_default_conf.changed
 
 - name: Make Node Exporter listen on localhost only
   template:
@@ -59,6 +73,23 @@
     src: templates/prometheus.yml
     dest: /etc/prometheus/prometheus.yml
 
+- name: Copy alerts rules
+  copy:
+    src: files/alerts
+    dest: /etc/prometheus/
+    remote_src: no
+
+- name: Create AlertManager config
+  template:
+    src: templates/alertmanager.yml
+    dest: /etc/prometheus/alertmanager.yml
+
+- name: Create AlertManager start config
+  template:
+    src: templates/default_alertmanager
+    dest: /etc/default/prometheus-alertmanager
+  register: alertmanager_default_conf
+
 - name: Make Prometheus listen on localhost only
   template:
     src: templates/default_prometheus
@@ -70,6 +101,15 @@
     name: prometheus
     state: restarted
   when: prometheus_default_conf.changed
+
+- name: Restart AlertManager
+  service:
+    name: prometheus-alertmanager
+    state: restarted
+  when: alertmanager_default_conf.changed
+
+- name: Reload AlertManager config
+  command: "curl -X POST http://localhost:9093/-/reload"
 
 - name: Reload Prometheus config
   command: "curl -X POST http://localhost:9090/-/reload"

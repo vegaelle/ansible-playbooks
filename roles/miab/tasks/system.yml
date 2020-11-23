@@ -2,7 +2,7 @@
 - name: Set Mailinabox env vars
   set_fact:
     miab_env:
-      DISABLE_FIREWALL: 1
+      # DISABLE_FIREWALL: 1
       NONINTERACTIVE: 1
       PRIMARY_HOSTNAME: "{{ inventory_hostname }}"
       EMAIL_ADDR: "me@{{ inventory_hostname }}"

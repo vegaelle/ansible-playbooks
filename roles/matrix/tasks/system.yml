@@ -115,6 +115,7 @@
     --report-stats=no
   args:
     chdir: /srv
+    creates: /srv/homeserver.yml
 
 - name: Configure synapse
   template:

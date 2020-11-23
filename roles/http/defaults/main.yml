@@ -5,3 +5,5 @@ redirected_ports:
     proto: tcp
   - value: 8448
     proto: tcp
+metrics:
+  nginx: 9145

@@ -125,6 +125,9 @@ storage:
 
     relocated_repo_access_is_ok: true
 
+    borg_security_directory: /{{ zfs_volume }}/.backups/security
+    borg_cache_directory: /{{ zfs_volume }}/.backups/cache
+
 # Retention policy for how many backups to keep in each category. See
 # https://borgbackup.readthedocs.org/en/stable/usage.html#borg-prune for details.
 # At least one of the "keep" options is required for pruning to work.

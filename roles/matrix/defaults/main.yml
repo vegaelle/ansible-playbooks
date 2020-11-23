@@ -7,4 +7,12 @@ memory: "2048"
 swap: "1024"
 firewall_file: "firewall_matrix.j2"
 allow_ssh: "no"
-redirected_ports: []
+redirected_ports:
+  - value: 3478
+    proto: tcp
+  - value: 3478
+    proto: udp
+  - value: 5349
+    proto: tcp
+  - value: 5349
+    proto: udp
