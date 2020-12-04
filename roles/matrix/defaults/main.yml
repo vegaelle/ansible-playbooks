@@ -16,3 +16,5 @@ redirected_ports:
     proto: tcp
   - value: 5349
     proto: udp
+blackbox:
+  enable: yes

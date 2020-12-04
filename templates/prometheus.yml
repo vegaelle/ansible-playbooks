@@ -7,8 +7,8 @@ global:
 
   # Attach these labels to any time series or alerts when communicating with
   # external systems (federation, remote storage, Alertmanager).
-  external_labels:
-      monitor: 'example'
+  # external_labels:
+  #     monitor: 'example'
 
 # Load and evaluate rules in this file every 'evaluation_interval' seconds.
 rule_files:
@@ -51,8 +51,8 @@ scrape_configs:
       module: [http_2xx]  # Look for a HTTP 200 response.
     static_configs:
       - targets:
-{% for node in groups['containers'] %}        - https://{{ node }}
-{% endfor %}
+{% for node in groups['containers'] %}{% if 'blackbox' in roles_vars[hostvars[node].role] and roles_vars[hostvars[node].role].blackbox.enable %}        - https://{{ node }}{{ roles_vars[hostvars[node].role].blackbox.uri | default('') }}
+{% endif %}{% endfor %}
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

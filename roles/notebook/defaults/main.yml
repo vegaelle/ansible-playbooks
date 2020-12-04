@@ -8,3 +8,5 @@ swap: 2048
 firewall_file: firewall.j2
 redirected_ports: []
 allow_ssh: yes
+blackbox:
+  enable: yes

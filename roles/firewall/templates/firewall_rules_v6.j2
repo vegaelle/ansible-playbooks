@@ -11,7 +11,7 @@
 {% for container in groups['containers'] %}
 # container {{ container }}
 [0:0] -A FORWARD -s {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}::/64 -j ACCEPT
-{% if hostvars[container].role in roles_vars %}
+{% if 'redirected_ports' in roles_vars[hostvars[container].role] %}
 # ports redirections for {{ container }}
 {% for port in roles_vars[hostvars[container].role].redirected_ports %}
 # open port for {{ port.value }} ({{ port.proto }})
@@ -33,7 +33,7 @@ COMMIT
 {% for container in groups['containers'] %}
 [0:0] -A PREROUTING -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}::/64 -p tcp --dport 80 -j DNAT --to-destination [{{ reverse_proxy_ip6}}]:80
 [0:0] -A PREROUTING -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}::/64 -p tcp --dport 443 -j DNAT --to-destination [{{ reverse_proxy_ip6 }}]:443
-{% if hostvars[container].role in roles_vars and 'allow_ssh' in roles_vars[hostvars[container].role] and roles_vars[hostvars[container].role].allow_ssh %}
+{% if 'allow_ssh' in roles_vars[hostvars[container].role] and roles_vars[hostvars[container].role].allow_ssh %}
 # allow ssh for {{ container }} at port 22{{ hostvars[container].ctid }}
 [0:0] -A PREROUTING -d {{ firewall_public_ip6[:17] }}{{ firewall_ctid | hex }}:7665:6761:6e62:7477 -p tcp --dport 22{{ hostvars[container].ctid }} -j DNAT --to-destination [{{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}:7665:6761:6e62:7477]:22
 {% endif %}

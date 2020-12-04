@@ -8,4 +8,6 @@ swap: 256
 firewall_file: firewall.j2
 redirected_ports: []
 allow_ssh: no
-
+blackbox:
+  enable: yes
+  uri: /js/embed.min.js

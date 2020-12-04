@@ -7,3 +7,5 @@ memory: 3072
 swap: 2048
 firewall_file: firewall.j2
 redirected_ports: []
+blackbox:
+  enable: yes

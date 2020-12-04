@@ -1,0 +1,37 @@
+---
+- name: Fetch role vars
+  include_vars:
+    file: "{{ playbook_dir }}/roles/{{ role_name }}/defaults/main.yml"
+    name: "{{ role_name }}"
+  loop:
+    - firewall
+    - http
+    - miab
+    - osp
+    - mastodon
+    - matrix
+    - funkwhale
+    - wordpress
+    - melting
+    - static
+    - isso
+    - notebook
+  loop_control:
+    loop_var: role_name
+
+- name: Set roles vars fact
+  set_fact:
+    roles_vars:
+      firewall: "{{ firewall }}"
+      http: "{{ http }}"
+      miab: "{{ miab }}"
+      osp: "{{ osp }}"
+      mastodon: "{{ mastodon }}"
+      matrix: "{{ matrix }}"
+      funkwhale: "{{ funkwhale }}"
+      wordpress: "{{ wordpress }}"
+      melting: "{{ melting }}"
+      static: "{{ static }}"
+      isso: "{{ isso }}"
+      notebook: "{{ notebook }}"
+...

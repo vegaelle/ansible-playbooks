@@ -23,3 +23,5 @@ redirected_ports:
     proto: tcp
   - value: 4190
     proto: tcp
+blackbox:
+  enable: yes

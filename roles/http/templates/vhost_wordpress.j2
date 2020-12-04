@@ -1,3 +1,5 @@
+limit_conn_zone $binary_remote_addr zone={{ item }}:20m;
+
 upstream {{ item }}-upstream {
     server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:8000;
 }
@@ -31,6 +33,7 @@ server {
     index index.php index.htm index.html;
 
     add_header Content-Security-Policy "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';" always;
+    limit_conn {{ item }} 100;
 
     location / {
         # This is cool because no php is touched for static content.
