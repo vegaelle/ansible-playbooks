@@ -27,10 +27,19 @@
     home: /srv
     system: yes
 
+- name: Add nodejs apt key
+  shell: "wget -qO- https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -"
+
+- name: Set node-source repo
+  template:
+    src: templates/nodesource.list
+    dest: /etc/apt/sources.list.d/nodesource.list
+
 - name: Install system dependencies
   apt:
     name: "{{ item }}"
     state: present
+    update_cache: yes
   loop:
     - acl
     - texlive
@@ -43,8 +52,8 @@
     - sqlite3
     - vim
     - nodejs
-    - npm
     - git
+    - curl
 
 - name: Install python dependencies
   pip:
