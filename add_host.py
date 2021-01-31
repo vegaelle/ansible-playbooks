@@ -3,8 +3,24 @@ import sys
 import os
 import json
 import argparse
+from contextlib import contextmanager
 
 import ansible_vault
+
+
+@contextmanager
+def safe_open(file: str, *args, **kwargs):
+    try:
+        with open(file, 'rb') as fd:
+            backup = fd.read()
+    except FileNotFoundError:
+        backup = b''
+    try:
+        yield open(file, *args,**kwargs)
+    except Exception as e:
+        with open(file, 'wb') as fd:
+            fd.write(backup)
+        raise e
 
 
 def main():
@@ -45,7 +61,7 @@ def main():
     # if 'miab' in host_vars['groups']:
     #     vault_data['mailinabox'] = {'ctid': int(host_vars['ctid']),
     #                                 'ip': f'10.0.{vlan}.{ctid}'}
-    with open(f'host_vars/{host}/vault.yml', 'wb') as fd:
+    with safe_open(f'host_vars/{host}/vault.yml', 'w') as fd:
         vault.dump(vault_data, fd)
 
     with open('backups.yml') as fd:
@@ -53,7 +69,7 @@ def main():
         if vault_data is None:
             vault_data = {}
     vault_data[host] = host_vars['backup_passphrase']
-    with open('backups.yml', 'wb') as fd:
+    with safe_open('backups.yml', 'w') as fd:
         vault.dump(vault_data, fd)
 
 
