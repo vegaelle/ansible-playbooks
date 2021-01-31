@@ -131,7 +131,7 @@
 
 - name: Harden nginx
   include_role:
-    name: dev-sec.nginx-hardening
+    name: devsec.hardening.nginx_hardening
 
 - name: Register Let’s Encrypt account
   command: "certbot register -m {{ le_acct_mail }} --no-eff-email --agree-tos"
