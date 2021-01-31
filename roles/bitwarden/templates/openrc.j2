@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+name="Bitwarden RS"
+command="/opt/bitwarden_rs"
+pidfile="/var/run/bitwarden_rs.pid"
+command_user="bitwarden"
+start_stop_daemon_args="-u bitwarden -d /home/bitwarden -b -m"
+
+depend() {
+    need net
+    provide bitwarden_rs
+    use dns
+}
+

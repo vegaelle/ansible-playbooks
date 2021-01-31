@@ -61,7 +61,7 @@
     name: openssl
 - name: Hardening nginx
   include_role:
-    name: dev-sec.nginx-hardening
+    name: devsec.hardening.nginx_hardening
 
 - name: Create docroot
   file:

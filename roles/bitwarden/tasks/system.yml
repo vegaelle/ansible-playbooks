@@ -1,0 +1,151 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+- name: Create www-data user
+  user:
+    name: www-data
+    groups: www-data
+    home: /srv
+
+- name: Create bitwarden user
+  user:
+    name: bitwarden
+    groups: bitwarden
+    home: /home/bitwarden
+    shell: /bin/sh
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+
+- name: Install PostgreSQL
+  apk:
+    name: wget,postgresql,postgresql-contrib,postgresql-dev,curl,sudo,openssl,git
+
+# - name: Install other system requirements
+#   apk:
+#     name: build-base,curl,python3-dev,sudo,git,zlib-dev,libpng-dev,jpeg-dev,libffi-dev,redis,libxml2-dev,libxslt-dev
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Install psycopg2
+  apk:
+    name: py3-psycopg2
+
+- postgresql_query:
+    query: "update pg_database set datallowconn = TRUE where datname = 'template0';"
+
+- postgresql_query:
+    db: template0
+    query: "update pg_database set datistemplate = FALSE where datname = 'template1';"
+
+- postgresql_db:
+    name: template1
+    state: absent
+
+- postgresql_db:
+    name: template1
+    template: template0
+    encoding: UTF8
+
+- postgresql_query:
+    query: "update pg_database set datallowconn = TRUE where datname = 'template0';"
+
+- name: Create database
+  postgresql_db:
+    name: bitwarden
+    encoding: UTF8
+
+- name: Create database user
+  postgresql_user:
+    name: bitwarden
+    password: "{{ database_password }}"
+    role_attr_flags: CREATEDB,NOSUPERUSER
+    priv: ALL
+    db: bitwarden
+
+- name: Set config file
+  template:
+    src: templates/env.j2
+    dest: /home/bitwarden/.env
+
+- name: Get docker-image-extract script
+  get_url:
+    url: "https://github.com/jjlin/docker-image-extract/raw/master/docker-image-extract"
+    dest: /opt/docker-image-extract
+    mode: 755
+
+- name: Extract Bitwarden_rs docker image
+  command: "/opt/docker-image-extract bitwardenrs/server:alpine"
+  args:
+    chdir: "/tmp"
+
+- name: Fetch latest Bitwarden-rs version
+  copy:
+    src: "/tmp/output/bitwarden_rs"
+    dest: "/opt/bitwarden_rs"
+    remote_src: yes
+    mode: 755
+
+- name: Delete Bitwarden_rs image contents
+  file:
+    path: /tmp/output
+    state: absent
+
+- name: Get latest web-vault version
+  shell: "curl --silent https://api.github.com/repos/dani-garcia/bw_web_builds/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
+  register: web_vault_version
+
+- name: Fetch latest web-vault version
+  get_url:
+    url: "https://github.com/dani-garcia/bw_web_builds/releases/download/{{ web_vault_version.stdout }}/bw_web_{{ web_vault_version.stdout }}.tar.gz"
+    dest: "/srv/web_vault.tar.gz"
+    owner: www-data
+    group: www-data
+
+- name: Untar the archive
+  command: "tar xf /srv/web_vault-{{ web_vault_version.stdout }}.tar.gz -C /srv/public"
+  args:
+    creates: "/srv/public/web-vault"
+  become: yes
+  become_user: www-data
+
+- name: Create openrc service file
+  template:
+    src: templates/openrc.j2
+    dest: /etc/init.d/bitwarden_rs
+    mode: 755
+
+- name: Start Bitwarden_rs
+  service:
+    name: bitwarden_rs
+    state: started
+    runlevel: default
+
+...

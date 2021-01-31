@@ -16,6 +16,7 @@
     - static
     - isso
     - notebook
+    - bitwarden
   loop_control:
     loop_var: role_name
 
@@ -34,4 +35,5 @@
       static: "{{ static }}"
       isso: "{{ isso }}"
       notebook: "{{ notebook }}"
+      bitwarden: "{{ bitwarden }}"
 ...
