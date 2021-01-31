@@ -154,29 +154,29 @@
 
 - name: Fetch latest Element version
   get_url:
-    url: "https://github.com/vector-im/element-web/releases/download/{{ element_version.stdout }}/riot-{{ element_version.stdout }}.tar.gz"
-    dest: "/srv/riot-{{ element_version.stdout }}.tar.gz"
+    url: "https://github.com/vector-im/element-web/releases/download/{{ element_version.stdout }}/element-{{ element_version.stdout }}.tar.gz"
+    dest: "/srv/element-{{ element_version.stdout }}.tar.gz"
     owner: www-data
     group: www-data
 
 - name: Untar the archive
-  command: "tar xf /srv/riot-{{ element_version.stdout }}.tar.gz"
+  command: "tar xf /srv/element-{{ element_version.stdout }}.tar.gz"
   args:
     chdir: "/srv"
-    creates: "/srv/riot-{{ element_version.stdout }}"
+    creates: "/srv/element-{{ element_version.stdout }}"
   become: yes
   become_user: www-data
 
 - name: Configure Element
   template:
     src: templates/config.j2
-    dest: "/srv/riot-{{ element_version.stdout }}/config.json"
+    dest: "/srv/element-{{ element_version.stdout }}/config.json"
     owner: www-data
     group: www-data
 
 - name: Link public dir to latest version
   copy:
-    src: "/srv/riot-{{ element_version.stdout }}"
+    src: "/srv/element-{{ element_version.stdout }}"
     dest: "/srv/public/element"
     remote_src: yes
 
