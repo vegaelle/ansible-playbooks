@@ -1,4 +1,4 @@
 #! /bin/sh
 
-ansible-galaxy install dev-sec.nginx-hardening
+ansible-galaxy collection install devsec.hardening
 pip install passlib bcrypt
