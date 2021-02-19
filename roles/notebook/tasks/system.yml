@@ -146,4 +146,5 @@
   loop:
     - notebooks
     - supports
+    - exercices
 ...

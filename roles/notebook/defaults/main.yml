@@ -10,3 +10,4 @@ redirected_ports: []
 allow_ssh: yes
 blackbox:
   enable: yes
+  uri: /hub/login

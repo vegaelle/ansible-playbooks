@@ -854,6 +854,9 @@ c.Spawner.default_url = '/lab'
 #      such as JUPYTERHUB_API_URL.
 #  Default: {}
 # c.Spawner.environment = {}
+c.Spawner.environment = {
+    'JUPYTERHUB_SINGLEUSER_APP': "jupyter_server.serverapp.ServerApp"
+}
 
 ## Timeout (in seconds) before giving up on a spawned HTTP server
 #  
