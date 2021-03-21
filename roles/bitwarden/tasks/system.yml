@@ -97,7 +97,7 @@
 
 - name: Get docker-image-extract script
   get_url:
-    url: "https://github.com/jjlin/docker-image-extract/raw/master/docker-image-extract"
+    url: "https://github.com/jjlin/docker-image-extract/raw/main/docker-image-extract"
     dest: /opt/docker-image-extract
     mode: 755
 
@@ -147,5 +147,8 @@
     name: bitwarden_rs
     state: started
     runlevel: default
+
+- name: Add bitwarden to default runlevel
+  command: rc-update add bitwarden_rs default
 
 ...

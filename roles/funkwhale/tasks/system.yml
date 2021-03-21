@@ -30,7 +30,7 @@
   set_fact:
     funkwhale_install_path: "/srv/funkwhale"
     funkwhale_domain: "{{ inventory_hostname }}"
-    funkwhale_version: "1.0.1"
+    funkwhale_version: "1.1"
     funkwhale_hostname: "{{ inventory_hostname }}"
     funkwhale_nginx_managed: false
     funkwhale_api_ip: "10.0.{{ vlan }}.{{ ctid }}"

@@ -16,11 +16,11 @@
     name: container
     tasks_from: container
 
-- name: Create public dir
-  file:
-    path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
-    state: directory
-    recurse: yes
+# - name: Create public dir
+#   file:
+#     path: "/{{ zfs_volume }}/subvol-{{ ctid }}-disk-0/srv/public"
+#     state: directory
+#     recurse: yes
 
 - name: Update apt
   command: "pct exec {{ ctid }} -- apt update"

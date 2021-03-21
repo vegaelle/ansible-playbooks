@@ -99,5 +99,8 @@
 - name: Reload supervisord
   command: supervisorctl reload
 
+- name: Add supervisor to default runlevel
+  command: rc-update add supervisord default
+
 ...
 

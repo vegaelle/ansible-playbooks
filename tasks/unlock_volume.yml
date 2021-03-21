@@ -17,9 +17,9 @@
     stdin: "{{ host_vars.passphrase }}"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
-- name: "<{{ item }}>: Mount ZFS volumes"
-  command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ansible_ssh_extra_args }}-disk-0"
-  when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
+# - name: "<{{ item }}>: Mount ZFS volumes"
+#   command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ansible_ssh_extra_args }}-disk-0"
+#   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
 - name: "<{{ item }}>: Start container"
   command: "pct start {{ host_vars.ansible_ssh_extra_args }}"
