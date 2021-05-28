@@ -116,6 +116,9 @@
     # streaming_api_base_url:
     # streaming_cluster_num: 1
 
+    max_toot_chars: 5000
+    web_concurrency: 2
+
 # - name: Create mastodon public dir
 #   file:
 #     path: /home/mastodon/public

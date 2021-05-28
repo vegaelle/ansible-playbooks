@@ -1,0 +1,19 @@
+---
+- name: Set custom facts
+  set_fact:
+    image: "alpine-3.11-default_20200425_amd64.tar.xz"
+    ostype: "alpine"
+    disk_size: "8"
+    cpu_cores: "1"
+    cpu_units: "1024"
+    memory: "512"
+    swap: "512"
+    firewall_file: "firewall.j2"
+    allow_ssh: "no"
+    redirected_ports: []
+- name: Setup container
+  include_role:
+    name: app
+    tasks_from: container
+...
+

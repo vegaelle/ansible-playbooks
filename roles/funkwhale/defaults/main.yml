@@ -1,7 +1,7 @@
 image: alpine-3.11-default_20200425_amd64.tar.xz
 ostype: alpine
 disk_size: 8
-cpu_cores: 1
+cpu_cores: 2
 cpu_units: 1024
 memory: 2048
 swap: 1024

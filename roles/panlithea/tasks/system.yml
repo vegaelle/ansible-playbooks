@@ -65,29 +65,29 @@
 
 - name: Clone git repository
   git:
-    repo: "https://framagit.org/gordon/meltingpotes"
-    dest: "/srv/meltingpotes"
+    repo: "https://framagit.org/gordon/panlithea"
+    dest: "/srv/panlithea"
   become: yes
   become_user: www-data
 
 - name: Install pip dependencies
   pip:
-    requirements: /srv/meltingpotes/requirements.txt
+    requirements: /srv/panlithea/requirements.txt
 
 - name: Configure Django
   template:
     src: templates/production.j2
-    dest: /srv/meltingpotes/meltingpotes/settings/production.py
+    dest: /srv/panlithea/panlithea/settings/production.py
     owner: www-data
     group: www-data
 
 - name: Create database
-  command: "python3 /srv/meltingpotes/manage.py migrate --settings=meltingpotes.settings.production"
+  command: "python3 /srv/panlithea/manage.py migrate --settings=panlithea.settings.production"
   become: yes
   become_user: www-data
 
 - name: Collect assets
-  command: "python3 /srv/meltingpotes/manage.py collectstatic --settings=meltingpotes.settings.production --no-input"
+  command: "python3 /srv/panlithea/manage.py collectstatic --settings=panlithea.settings.production --no-input"
   become: yes
   become_user: www-data
 
@@ -106,7 +106,7 @@
 
 - name: Create log directory
   file:
-    path: /var/log/meltingpotes
+    path: /var/log/panlithea
     state: directory
 
 - name: Configure uwsgi

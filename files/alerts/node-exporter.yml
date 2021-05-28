@@ -20,7 +20,7 @@ groups:
       description: "The node is under heavy memory pressure. High rate of major page faults\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
   - alert: HostHighCpuLoad
-    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",instance!~".*backup.*"}[5m])) * 100) > 80
     for: 15m
     labels:
       severity: warning

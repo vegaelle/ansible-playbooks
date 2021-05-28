@@ -17,6 +17,7 @@
     - isso
     - notebook
     - bitwarden
+    - panlithea
   loop_control:
     loop_var: role_name
 
@@ -36,4 +37,5 @@
       isso: "{{ isso }}"
       notebook: "{{ notebook }}"
       bitwarden: "{{ bitwarden }}"
+      panlithea: "{{ panlithea }}"
 ...

@@ -105,6 +105,8 @@
   pip:
     name: matrix-synapse
     state: latest
+  environment:
+    CRYPTOGRAPHY_DONT_BUILD_RUST: 1
 
 - name: Create homeserver files
   command: >
@@ -176,7 +178,7 @@
 
 - name: Link public dir to latest version
   copy:
-    src: "/srv/element-{{ element_version.stdout }}"
+    src: "/srv/element-{{ element_version.stdout }}/"
     dest: "/srv/public/element"
     remote_src: yes
 
