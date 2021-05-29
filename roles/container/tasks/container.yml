@@ -59,6 +59,7 @@
 
 - name: "<{{ item }}> Initiate backup"
   command: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf init -e repokey"
+  ignore_errors: yes
   register: borgmatic_init
 
 - name: "<{{ item }}> Create snapshot cron task"

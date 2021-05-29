@@ -63,7 +63,7 @@
 - name: Override vars
   set_fact:
     nginx_limit_conn_zone: "$binary_remote_addr zone=default:40m"
-    nginx_limit_conn: 20
+    nginx_limit_conn: "default 20"
 
 - name: Hardening nginx
   include_role:

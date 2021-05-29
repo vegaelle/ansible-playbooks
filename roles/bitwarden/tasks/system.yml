@@ -14,11 +14,11 @@
     groups: www-data
     home: /srv
 
-- name: Create bitwarden user
+- name: Create vaultwarden user
   user:
-    name: bitwarden
-    groups: bitwarden
-    home: /home/bitwarden
+    name: vaultwarden
+    groups: vaultwarden
+    home: /home/vaultwarden
     shell: /bin/sh
 
 - name: Set up web directory
@@ -79,21 +79,21 @@
 
 - name: Create database
   postgresql_db:
-    name: bitwarden
+    name: vaultwarden
     encoding: UTF8
 
 - name: Create database user
   postgresql_user:
-    name: bitwarden
+    name: vaultwarden
     password: "{{ database_password }}"
     role_attr_flags: CREATEDB,NOSUPERUSER
     priv: ALL
-    db: bitwarden
+    db: vaultwarden
 
 - name: Set config file
   template:
     src: templates/env.j2
-    dest: /home/bitwarden/.env
+    dest: /home/vaultwarden/.env
 
 - name: Get docker-image-extract script
   get_url:
@@ -101,19 +101,19 @@
     dest: /opt/docker-image-extract
     mode: 755
 
-- name: Extract Bitwarden_rs docker image
+- name: Extract Vaultwarden docker image
   command: "/opt/docker-image-extract bitwardenrs/server:alpine"
   args:
     chdir: "/tmp"
 
-- name: Fetch latest Bitwarden-rs version
+- name: Fetch latest Vaultwarden version
   copy:
-    src: "/tmp/output/bitwarden_rs"
-    dest: "/opt/bitwarden_rs"
+    src: "/tmp/output/vaultwarden"
+    dest: "/opt/vaultwarden"
     remote_src: yes
     mode: 755
 
-- name: Delete Bitwarden_rs image contents
+- name: Delete Vaultwarden image contents
   file:
     path: /tmp/output
     state: absent
@@ -139,16 +139,16 @@
 - name: Create openrc service file
   template:
     src: templates/openrc.j2
-    dest: /etc/init.d/bitwarden_rs
+    dest: /etc/init.d/vaultwarden
     mode: 755
 
-- name: Start Bitwarden_rs
+- name: Start vaultwarden
   service:
-    name: bitwarden_rs
+    name: vaultwarden
     state: started
     runlevel: default
 
-- name: Add bitwarden to default runlevel
-  command: rc-update add bitwarden_rs default
+- name: Add vaultwarden to default runlevel
+  command: rc-update add vaultwarden default
 
 ...

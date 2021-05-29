@@ -1,14 +1,14 @@
 #!/sbin/openrc-run
 
-name="Bitwarden RS"
-command="/opt/bitwarden_rs"
-pidfile="/var/run/bitwarden_rs.pid"
-command_user="bitwarden"
-start_stop_daemon_args="-u bitwarden -d /home/bitwarden -b -m"
+name="Vaultwarden"
+command="/opt/vaultwarden"
+pidfile="/var/run/vaultwarden.pid"
+command_user="vaultwarden"
+start_stop_daemon_args="-u vaultwarden -d /home/vaultwarden -b -m"
 
 depend() {
     need net
-    provide bitwarden_rs
+    provide vaultwarden
     use dns
 }
 
