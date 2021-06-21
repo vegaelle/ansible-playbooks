@@ -79,16 +79,16 @@
 
 - name: Create database
   postgresql_db:
-    name: vaultwarden
+    name: bitwarden
     encoding: UTF8
 
 - name: Create database user
   postgresql_user:
-    name: vaultwarden
+    name: bitwarden
     password: "{{ database_password }}"
     role_attr_flags: CREATEDB,NOSUPERUSER
     priv: ALL
-    db: vaultwarden
+    db: bitwarden
 
 - name: Set config file
   template:

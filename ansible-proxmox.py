@@ -259,7 +259,7 @@ def main_list(options, config_path):
             metadata['ansible_host'] = 'hv.ondule.fr'
             metadata['ansible_user'] = 'root'
             metadata['ansible_connection'] = 'lxc_ssh'
-            metadata['ansible_ssh_extra_args'] = vmid
+            metadata['ansible_ssh_extra_args'] = str(vmid)
 
             if 'groups' in metadata:
                 # print metadata
