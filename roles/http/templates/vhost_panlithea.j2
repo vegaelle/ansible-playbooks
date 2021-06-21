@@ -1,5 +1,5 @@
 upstream {{ item }}-upstream {
-    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:8000;
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:8000;
 }
 
 server {
@@ -26,7 +26,7 @@ server {
     sendfile on;
     keepalive_timeout 0;
 
-    add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' 'https://maxcdn.bootstrapcdn.com' 'https://cdn.jsdeliver.net'; script-src 'self' 'unsafe-inline'; object-src 'self' blob:;";
+    add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' maxcdn.bootstrapcdn.com cdn.jsdelivr.net; script-src 'self' 'unsafe-inline'; object-src 'self' blob:;";
 
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;

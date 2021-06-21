@@ -6,7 +6,7 @@ map $http_upgrade $connection_upgrade {
 }
 
 upstream {{ item }}-upstream {
-    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:8000;
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:8000;
 }
 
 server {

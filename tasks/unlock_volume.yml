@@ -3,11 +3,11 @@
     host_vars: "{{ hostvars[item] }}"
 
 - name: "<{{ item }}>: Check if CT exists"
-  shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ host_vars.ansible_ssh_extra_args }}.conf | wc -l"
+  shell: "ls /etc/pve/nodes/{{ ansible_hostname }}/lxc/{{ host_vars.lxc_host }}.conf | wc -l"
   register: config_exists
 
 - name: "<{{ item }}>: Check if CT is up"
-  command: "pct status {{ host_vars.ansible_ssh_extra_args }}"
+  command: "pct status {{ host_vars.lxc_host }}"
   register: ct_status
   when: config_exists.stdout == '1'
 
@@ -18,9 +18,9 @@
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
 # - name: "<{{ item }}>: Mount ZFS volumes"
-#   command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.ansible_ssh_extra_args }}-disk-0"
+#   command: "zfs mount {{ host_vars.pool }}/subvol-{{ host_vars.lxc_host }}-disk-0"
 #   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"
 
 - name: "<{{ item }}>: Start container"
-  command: "pct start {{ host_vars.ansible_ssh_extra_args }}"
+  command: "pct start {{ host_vars.lxc_host }}"
   when: "config_exists.stdout == '1' and ct_status.stdout == 'status: stopped'"

@@ -1,5 +1,5 @@
 upstream {{ item }}-upstream {
-    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:80;
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:80;
 }
 
 server {

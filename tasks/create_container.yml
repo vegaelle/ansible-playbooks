@@ -3,7 +3,7 @@
   set_fact:
     host: "{{ hostvars[item] }}"
     main_domain: "{{ item }}"
-    ctid: "{{ hostvars[item].ansible_ssh_extra_args }}"
+    ctid: "{{ hostvars[item].lxc_host }}"
     vlan: "{{ hostvars[item].vlan }}"
     passphrase: "{{ hostvars[item].zfs_volume_passphrase }}"
     backup_passphrase: "{{ hostvars[item].backup_passphrase }}"

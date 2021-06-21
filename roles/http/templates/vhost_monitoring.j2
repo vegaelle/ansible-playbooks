@@ -1,6 +1,6 @@
 {% for item in groups['containers'] %}
 upstream {{ item }}-monitoring-upstream {
-    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:9100;
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:9100;
 }
 {% endfor %}
 
@@ -57,7 +57,7 @@ server {
     {% if hostvars[item].role in roles_vars  and 'metrics' in roles_vars[hostvars[item].role] %}
     {% for service_name, service_port in roles_vars[hostvars[item].role].metrics.items() %}
     location /{{ item }}/ {
-        proxy_pass http://10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['ansible_ssh_extra_args'] }}:{{ service_port }}/;
+        proxy_pass http://10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:{{ service_port }}/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Host $host;
