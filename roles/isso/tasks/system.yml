@@ -43,6 +43,10 @@
     - libffi-dev
     - git
 
+- name: Install wheel, for some reason
+  pip:
+    name: wheel
+
 - name: Install Isso
   pip:
     # name: isso
@@ -68,6 +72,11 @@
     name: uwsgi-python3
     state: present
 
+- name: Install uwsgi-spooler
+  apk:
+    name: uwsgi-spooler
+    state: present
+
 - name: Install supervisor
   apk:
     name: supervisor
@@ -80,6 +89,13 @@
 - name: Create log directory
   file:
     path: /var/log/isso
+    state: directory
+
+- name: Create spooler directory
+  file:
+    path: /srv/isso/spooler
+    owner: www-data
+    group: www-data
     state: directory
 
 - name: Configure uwsgi

@@ -1,3 +1,4 @@
 ansible_host: hv.ondule.fr
 ansible_user: root
+ansible_ssh_user: root
 ansible_connection: lxc_ssh
