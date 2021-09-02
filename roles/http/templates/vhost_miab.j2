@@ -25,7 +25,7 @@ server {
     ssl_certificate    /etc/ssl/letsencrypt/autoconfig.{{ item }}.pem;
     ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
 
-    client_max_body_size 20M;
+    client_max_body_size 100M;
 
     access_log /var/log/nginx/{{ item }}_access_log main;
     error_log /var/log/nginx/{{ item }}_error_log info;

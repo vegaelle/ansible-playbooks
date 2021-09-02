@@ -101,6 +101,9 @@
   pip:
     name: "hiredis"
 
+# - name: Stop synapse
+#   command: supervisorctl stop synapse
+
 - name: Install synapse
   pip:
     name: matrix-synapse

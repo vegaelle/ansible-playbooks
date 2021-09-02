@@ -87,7 +87,7 @@ server {
         proxy_set_header Connection "upgrade";
 
         # this is needed if you have file import via upload enabled
-        client_max_body_size 100M;
+        client_max_body_size 200M;
         proxy_pass   http://{{ item }}-upstream/;
     }
 
