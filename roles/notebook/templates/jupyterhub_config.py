@@ -201,8 +201,8 @@ c.JupyterHub.concurrent_spawn_limit = 20
 # c.JupyterHub.cookie_secret_file = 'jupyterhub_cookie_secret'
 
 ## The location of jupyterhub data files (e.g. /usr/local/share/jupyterhub)
-#  Default: '/home/gordon/.virtualenvs/ansible/share/jupyterhub'
-# c.JupyterHub.data_files_path = '/home/gordon/.virtualenvs/ansible/share/jupyterhub'
+#  Default: '/usr/local/share/jupyterhub'
+c.JupyterHub.data_files_path = '/usr/local/share/jupyterhub'
 
 ## Include any kwargs to pass to the database connection. See
 #  sqlalchemy.create_engine for details.
