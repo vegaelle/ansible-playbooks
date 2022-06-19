@@ -18,6 +18,7 @@
     - notebook
     - bitwarden
     - panlithea
+    - minecraft
   loop_control:
     loop_var: role_name
 
@@ -38,4 +39,5 @@
       notebook: "{{ notebook }}"
       bitwarden: "{{ bitwarden }}"
       panlithea: "{{ panlithea }}"
+      minecraft: "{{ minecraft }}"
 ...

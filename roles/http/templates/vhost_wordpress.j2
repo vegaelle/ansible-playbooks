@@ -1,4 +1,20 @@
-limit_conn_zone $binary_remote_addr zone={{ item }}:20m;
+geo $whitelist {
+   default 0;
+   # IPs from Wordfence scanners
+   44.239.130.172 1;
+   44.238.191.15 1;
+   35.155.126.231 1;
+   54.68.32.247 1;
+   44.235.211.232 1;
+   54.71.203.174 1;
+}
+
+map $whitelist $limit {
+    0     $binary_remote_addr;
+    1     "";
+}
+
+limit_conn_zone $limit zone={{ item }}:20m;
 
 upstream {{ item }}-upstream {
     server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:8000;
@@ -39,6 +55,9 @@ server {
         # This is cool because no php is touched for static content.
         # include the "?$args" part so non-default permalinks doesn't break when using query string
         try_files $uri $uri/ /index.php?$args;
+    }
+    location ~ ^/\.user\.ini {
+        deny all;
     }
 
     location ~ \.php$ {

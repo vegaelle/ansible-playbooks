@@ -151,5 +151,11 @@
   when: _check_installation.rc != 0
   become: true
   become_user: www-data
+    
+- name: Install Wordfence
+  command: >
+    /opt/wp-cli plugin install --path=/srv/public --activate wordfence
+  become: true
+  become_user: www-data
 
 ...

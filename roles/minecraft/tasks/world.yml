@@ -1,0 +1,51 @@
+---
+
+- name: Create worlds dir
+  file:
+    path: "/home/minecraft/{{ item.world_name }}"
+    state: directory
+    owner: minecraft
+    group: minecraft
+
+- name: Create eula file
+  file:
+    path: "/home/minecraft/{{ item.world_name }}/eula.txt"
+    state: touch
+    owner: minecraft
+    group: minecraft
+      
+- name: Accept EULA for each world
+  lineinfile:
+    path: "/home/minecraft/{{ item.world_name }}/eula.txt"
+    line: "eula=true"
+    owner: minecraft
+    group: minecraft
+
+- name: Copy config file
+  template:
+    src: templates/server.properties.j2
+    dest: "/home/minecraft/{{ item.world_name }}/server.properties"
+    owner: minecraft
+    group: minecraft
+
+- name: Link Minecraft server
+  file:
+    src: "/opt/minecraft_server.{{ item.version }}.jar"
+    dest: "/home/minecraft/{{ item.world_name }}/minecraft_server.jar"
+    state: link
+    owner: minecraft
+    group: minecraft
+
+# - name: Create map dir
+#   file:
+#     dest: "/srv/public/maps/{{ world_name}}"
+#     owner: www-data
+#     group: www-data
+#     mode: 0755
+
+- name: Reload systemd
+  systemd:
+    name: "minecraft@{{ item.world_name }}.service"
+    state: started
+    enabled: yes
+...

@@ -1,0 +1,73 @@
+upstream {{ item }}-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:8123;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name  {{ item }} www.{{ item }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{ item }} www.{{ item }};
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+    
+    location / {
+        proxy_pass http://{{ item }}-upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Proxy "";
+        proxy_pass_header Server;
+
+        proxy_buffering off;
+        proxy_redirect off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        tcp_nodelay on;
+    }
+}
+{% if 'external_dns' not in hostvars[item] or not hostvars[item].external_dns %}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name autoconfig.{{ item }} autodiscover.{{ item }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
+
+    ssl_certificate    /etc/ssl/letsencrypt/autoconfig.{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass https://miab-upstream/;
+    }
+}
+{% endif %}

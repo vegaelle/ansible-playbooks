@@ -1,0 +1,18 @@
+---
+- name: Set custom facts
+  set_fact:
+    image: ubuntu-20.04-standard_20.04-1_amd64.tar.gz
+    ostype: ubuntu
+    disk_size: 8
+    cpu_cores: 2
+    cpu_units: 2048
+    memory: 4096
+    swap: 4096
+    firewall_file: firewall.j2
+    allow_ssh: yes
+    redirected_ports: []
+- name: Setup container
+  include_role:
+    name: app_ubuntu
+    tasks_from: container
+...

@@ -20,6 +20,15 @@
 {% endfor %}
 
 {% endif %}
+{% if hostvars[container].role == 'minecraft' %}
+{% for world in hostvars[container].worlds %}
+# open port for {{ world.port }} (minecraft server {{ world.world_name }})
+[0:0] -A FORWARD -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}:7665:6761:6e62:7477 -p udp --dport {{ world.port }} -j ACCEPT
+[0:0] -A FORWARD -d {{ firewall_public_ip6[:17] }}{{ hostvars[container].ctid | hex }}:7665:6761:6e62:7477 -p tcp --dport {{ world.port }} -j ACCEPT
+
+{% endfor %}
+{% endif %}
+
 {% endfor %}
 
 COMMIT

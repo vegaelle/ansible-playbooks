@@ -38,6 +38,19 @@ COMMIT
 [0:0] -A OUTPUT -d {{ firewall_public_ip }} -p {{ port.proto }} --dport {{ port.value }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}
 {% endfor %}
 
+{% if hostvars[container].role == 'minecraft' %}
+{% for world in hostvars[container].worlds %}
+# redirection for {{ world.port }} (minecraft server {{ world.world_name }})
+[0:0] -A PREROUTING -d {{ firewall_public_ip }} -p udp --dport {{ world.port }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}
+[0:0] -A PREROUTING -d {{ firewall_public_ip }} -p tcp --dport {{ world.port }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}
+[0:0] -A POSTROUTING -s 10.0.0.0/16 -d 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }} -p udp --dport {{ world.port }} -j MASQUERADE
+[0:0] -A POSTROUTING -s 10.0.0.0/16 -d 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }} -p tcp --dport {{ world.port }} -j MASQUERADE
+[0:0] -A OUTPUT -d {{ firewall_public_ip }} -p udp --dport {{ world.port }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}
+[0:0] -A OUTPUT -d {{ firewall_public_ip }} -p tcp --dport {{ world.port }} -j DNAT --to-destination 10.0.{{ hostvars[container].vlan }}.{{ hostvars[container].ctid }}
+
+{% endfor %}
+{% endif %}
+
 {% endif %}
 {% endfor %}
 COMMIT

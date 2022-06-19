@@ -1,0 +1,71 @@
+---
+- name: Setup system
+  include_role:
+    name: app_ubuntu
+    tasks_from: system
+      
+- name: Install system dependencies
+  apt:
+    name: 
+      - "{{ item }}"
+  loop:
+    - jq
+    - curl
+    - wget
+    - openjdk-17-jre-headless
+    - screen
+    - git
+
+- name: Copy get_minecraft_server script
+  copy:
+    src: files/get_minecraft_server.sh
+    dest: /opt/get_minecraft_server.sh
+    mode: 0755
+    remote_src: no
+
+- name: Get Minecraft server
+  command:
+    argv:
+      - "/opt/get_minecraft_server.sh"
+      - "{{ item.version }}"
+  loop: "{{ worlds }}"
+      
+- name: Create user
+  user:
+    name: minecraft
+    home: "/home/minecraft"
+    state: present
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+# - name: Set up web directory
+#   file:
+#     path: /srv/public/maps
+#     owner: www-data
+#     group: www-data
+#     mode: 0755
+      
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+      
+- name: Copy systemd files
+  template:
+    src: templates/systemd.j2
+    dest: "/lib/systemd/system/minecraft@.service"
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Configure worlds
+  include: tasks/world.yml
+  loop: "{{ worlds }}"
+...

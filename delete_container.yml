@@ -1,6 +1,6 @@
 ---
 - hosts: hypervisors
-  remote_user: root
+  # remote_user: root
   vars_prompt:
     - name: "host"
       prompt: "what is the container domain to delete?"

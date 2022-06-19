@@ -10,7 +10,7 @@
       command:
         argv:
           - "ssh-keygen"
-          - "-n"
+          - "-N"
           - ""
           - "-C"
           - "{{ item }}@{{ item }}"

@@ -30,14 +30,14 @@
   set_fact:
     funkwhale_install_path: "/srv/funkwhale"
     funkwhale_domain: "{{ inventory_hostname }}"
-    funkwhale_version: "1.1.1"
+    funkwhale_version: "1.2.2"
     funkwhale_hostname: "{{ inventory_hostname }}"
     funkwhale_nginx_managed: false
     funkwhale_api_ip: "10.0.{{ vlan }}.{{ ctid }}"
     funkwhale_api_port: 8000
     funkwhale_media_path: "/srv/public/media"
     funkwhale_static_path: "/srv/public/static"
-    funkwhale_web_workers: 2
+    funkwhale_web_workers: 4
     funkwhale_env_vars:
       - "EMAIL_CONFIG=smtp://localhost"
 
