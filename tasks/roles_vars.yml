@@ -12,13 +12,14 @@
     - matrix
     - funkwhale
     - wordpress
-    - melting
+    - morganelafait
     - static
     - isso
     - notebook
     - bitwarden
     - panlithea
     - minecraft
+    - freesewing
   loop_control:
     loop_var: role_name
 
@@ -33,11 +34,12 @@
       matrix: "{{ matrix }}"
       funkwhale: "{{ funkwhale }}"
       wordpress: "{{ wordpress }}"
-      melting: "{{ melting }}"
+      morganelafait: "{{ morganelafait }}"
       static: "{{ static }}"
       isso: "{{ isso }}"
       notebook: "{{ notebook }}"
       bitwarden: "{{ bitwarden }}"
       panlithea: "{{ panlithea }}"
       minecraft: "{{ minecraft }}"
+      freesewing: "{{ freesewing }}"
 ...

@@ -1,0 +1,69 @@
+upstream {{ item }}-upstream {
+    server 10.0.{{ hostvars[item]['vlan'] }}.{{ hostvars[item]['lxc_host'] }}:8000;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name  {{ item }} www.{{ item }};
+
+    include letsencrypt.conf;
+
+    if ($uri !~ '^/.well-known/acme-challenge') {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{ item }} www.{{ item }};
+
+    ssl_certificate    /etc/ssl/letsencrypt/{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+    client_max_body_size 32M;
+    sendfile on;
+
+    add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' releases.wagtail.org; script-src 'self' 'unsafe-inline'; object-src 'self' blob:;";
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location /static {
+        root /var/www/vhosts/{{ item }}/;
+    }
+
+    location /media {
+        root /var/www/vhosts/{{ item }}/;
+    }
+
+    location / {
+        uwsgi_pass {{ item }}-upstream;
+        include uwsgi_params;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name autoconfig.{{ item }} autodiscover.{{ item }};
+    add_header          Content-Security-Policy "script-src 'self' 'unsafe-inline'; object-src 'self'";
+
+    ssl_certificate    /etc/ssl/letsencrypt/autoconfig.{{ item }}.pem;
+    ssl_certificate_key    /etc/ssl/letsencrypt/ssl_private_key.pem;
+
+
+    access_log /var/log/nginx/{{ item }}_access_log main;
+    error_log /var/log/nginx/{{ item }}_error_log info;
+
+    root /var/www/vhosts/{{ item }};
+    index index.htm index.html;
+
+    location / {
+        proxy_pass https://miab-upstream/;
+    }
+}

@@ -46,6 +46,10 @@
 - name: Install wheel, for some reason
   pip:
     name: wheel
+      
+- name: Install passlib
+  pip:
+    name: passlib
 
 - name: Install Isso
   pip:

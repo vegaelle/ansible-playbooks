@@ -1,0 +1,98 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+# - name: Install pip
+#   apk:
+#     name: python3-pip
+
+# - name: Create www-data user
+#   user:
+#     name: www-data
+#     groups: www-data
+#     home: /srv
+#     shell: /bin/sh
+
+# - name: Set up web directory
+#   file:
+#     path: /srv/public
+#     owner: www-data
+#     group: www-data
+#     mode: 0755
+
+# - name: Change www-data home directory
+#   user:
+#     name: www-data
+#     home: /srv
+#     system: yes
+
+# - name: Change www-data home directory
+#   user:
+#     name: www-data
+#     home: /srv
+
+- name: Install node
+  apk:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - npm
+    - git
+
+- name: Install node packages
+  npm:
+    name: "{{ item }}"
+    state: latest
+    global: true
+  loop:
+    - yarn
+    - pm2
+
+
+- name: Clone Freesewing
+  git:
+    repo: 'https://github.com/vegaelle/freesewing'
+    dest: /srv/freesewing
+    version: mlf_lab
+
+- name: Install Freesewing dependencies
+  community.general.yarn:
+    path: /srv/freesewing
+    state: latest
+
+- name: Run 'yarn reconfigure'
+  command: yarn reconfigure
+  args:
+    chdir: /srv/freesewing
+
+- name: Precompile lab
+  command: yarn build
+  args:
+    chdir: /srv/freesewing/sites/lab
+      
+- name: Start pm2
+  command: pm2 startup
+    
+- name: Enable pm2 at start
+  service:
+    name: pm2
+    state: started
+    runlevel: default
+      
+- name: Reset app
+  command: pm2 del lab
+  args:
+    chdir: /srv/freesewing/sites/lab
+  ignore_errors: true
+      
+- name: Start app
+  command: pm2 start yarn --name lab -- serve
+  args:
+    chdir: /srv/freesewing/sites/lab
+      
+- name: Save pm2 config
+  command: pm2 save
+...
+

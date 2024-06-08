@@ -1,7 +1,7 @@
 ---
 - name: Set custom facts
   set_fact:
-    image: "{{ image | default('alpine-3.11-default_20200425_amd64.tar.xz') }}"
+    image: "{{ image | default('alpine-3.15-default_20211202_amd64.tar.xz') }}"
     ostype: "{{ ostype | default('alpine') }}"
     disk_size: "{{ disk_size | default(8) }}"
     cpu_cores: "{{ cpu_cores | default(1) }}"

@@ -1,0 +1,158 @@
+---
+- name: Setup system
+  include_role:
+    name: app
+    tasks_from: system
+
+- name: Create www-data user
+  user:
+    name: www-data
+    group: www-data
+    shell: /bin/sh
+    home: /srv
+
+- name: Set up web directory
+  file:
+    path: /srv/public
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+    system: yes
+
+- name: Change www-data home directory
+  user:
+    name: www-data
+    home: /srv
+
+
+- name: Install PostgreSQL
+  apk:
+    name: wget,postgresql,postgresql-contrib,postgresql-dev,nodejs-current,npm
+
+- name: Install other system requirements
+  apk:
+    name: build-base,python3-dev,py3-pip,sudo,git,zlib-dev,libpng-dev,jpeg-dev
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Install psycopg2
+  pip:
+    name: psycopg2
+
+- name: Create database user
+  postgresql_user:
+    name: django
+    password: "{{ database_password }}"
+    role_attr_flags: CREATEDB,NOSUPERUSER
+    # priv: ALL
+    db: django
+
+- name: Create database
+  postgresql_db:
+    name: django
+    owner: django
+
+- name: Grant database privileges
+  postgresql_privs:
+    database: django
+    privs: ALL
+    schema: public
+    objs: ALL_IN_SCHEMA
+    roles: django
+
+- name: Clone git repository
+  git:
+    repo: "https://framagit.org/vegaelle/morganelafait"
+    dest: "/srv/morganelafait"
+  become: yes
+  become_user: www-data
+
+- name: Install pip dependencies
+  pip:
+    requirements: /srv/morganelafait/requirements.txt
+    state: latest
+
+- name: Install node dependencies
+  npm:
+    name: mjml
+    state: latest
+    production: true
+    path: /srv/morganelafait
+
+- name: Configure Django
+  template:
+    src: templates/production.j2
+    dest: /srv/morganelafait/morganelafait/settings/local.py
+    owner: www-data
+    group: www-data
+
+- name: Create database
+  command: "python3 /srv/morganelafait/manage.py migrate --settings=morganelafait.settings.production"
+  become: yes
+  become_user: www-data
+
+- name: Create superadmin
+  command: "python3 /srv/morganelafait/manage.py createsuperuser --no-input --username morganelafait --email system@{{ inventory_hostname }}"
+  environment:
+    DJANGO_SUPERUSER_PASSWORD: "{{ django_admin_password }}"
+  ignore_errors: True
+
+- name: Collect assets
+  command: "python3 /srv/morganelafait/manage.py collectstatic --settings=morganelafait.settings.production --no-input"
+  become: yes
+  become_user: www-data
+
+- name: Install uwsgi
+  apk:
+    name: uwsgi,uwsgi-python3
+
+- name: Install supervisor
+  apk:
+    name: supervisor
+
+- name: Configure supervisor
+  template: 
+    src: templates/supervisord.j2
+    dest: /etc/supervisord.conf
+
+- name: Create log directory
+  file:
+    path: /var/log/morganelafait
+    state: directory
+
+- name: Configure uwsgi
+  template: 
+    src: templates/uwsgi.j2
+    dest: /srv/uwsgi.ini
+
+- name: Start supervisord
+  service:
+    name: supervisord
+    state: started
+    runlevel: default
+
+- name: Reread supervisord
+  command: supervisorctl reread
+
+- name: Reload supervisord
+  command: supervisorctl reload
+
+- name: Install jobs task
+  cron:
+    name: Run Django jobs
+    special_time: daily
+    job: "python /srv/morganelafait/manage.py runjobs daily"
+    state: present
+  environment:
+    DJANGO_SETTINGS_MODULE: "morganelafait.settings.production"
+...
+

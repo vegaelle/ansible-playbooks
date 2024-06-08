@@ -65,7 +65,7 @@
 
 - name: Clone git repository
   git:
-    repo: "https://framagit.org/gordon/panlithea"
+    repo: "https://framagit.org/vegaelle/panlithea"
     dest: "/srv/panlithea"
   become: yes
   become_user: www-data

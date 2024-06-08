@@ -52,6 +52,7 @@
     mastodon_home: "/srv/public/mastodon/"
     mastodon_user: "mastodon"
     local_https: false
+    use_http: true
     # web_domain: mastodon.example.com
     # alternate_domains: example1.com,example2.com
     # single_user_mode: true
@@ -63,6 +64,7 @@
     # Redis
     redis_host: redis
     redis_port: 6379
+    redis_pass: "{{ redis_pass }}"
 
     # Postgres
     db_host: db

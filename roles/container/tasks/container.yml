@@ -55,10 +55,10 @@
 - name: "<{{ item }}> Create Borg configuration"
   template:
     src: "{{ borgmatic_config_file }}"
-    dest: "/{{ zfs_volume }}/.backups/borgmatic.conf"
+    dest: "/{{ zfs_volume }}/.backups/borgmatic.yaml"
 
 - name: "<{{ item }}> Initiate backup"
-  command: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf init -e repokey"
+  command: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.yaml init -e repokey"
   ignore_errors: yes
   register: borgmatic_init
 
@@ -80,7 +80,7 @@
     name: "Backups for {{ item }}"
     minute: "10"
     hour: "{{ ( inventory_index|int ) + 2 }}"
-    job: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.conf"
+    job: "/usr/local/bin/borgmatic -c /{{ zfs_volume }}/.backups/borgmatic.yaml"
 
 - name: "<{{ item }}> Create container"  # WARN: can’t process CT update yet
   command: |

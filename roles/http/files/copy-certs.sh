@@ -17,7 +17,7 @@ cur_dir=`pwd`
 
 cd $source_certs_dir
 
-domains=`ls *.pem | grep -vE '^(ssl_certificate|ssl_private_key|dh2048).pem$' | sed -e 's/-.*//' | uniq`
+domains=`ls -tr *.pem | grep -vE '^(ssl_certificate|ssl_private_key|dh2048).pem$' | grep -v selfsigned | sed -e 's/-\d\{8\}-[a-f0-9]\{8\}\.pem//' | uniq`
 
 for domain in $domains
 do

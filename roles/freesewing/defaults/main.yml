@@ -1,0 +1,12 @@
+image: alpine-3.17-default_20221129_amd64.tar.xz
+ostype: alpine
+disk_size: 8
+cpu_cores: 1
+cpu_units: 1024
+memory: 1024
+swap: 1024
+firewall_file: firewall.j2
+redirected_ports: []
+allow_ssh: yes
+blackbox:
+  enable: yes

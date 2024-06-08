@@ -3,10 +3,17 @@
   apk:
     upgrade: yes
     update_cache: yes
+    repository: 
+      - http://dl-cdn.alpinelinux.org/alpine/v3.16/main
+      - http://dl-cdn.alpinelinux.org/alpine/v3.16/community
 
 - name: Install tzdata
   apk:
     name: tzdata
+
+- name: Install pip
+  apk:
+    name: py3-pip
 
 - name: Copy timezone data
   copy:

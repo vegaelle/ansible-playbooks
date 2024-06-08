@@ -31,16 +31,22 @@
   command: "git checkout management/ssl_certificates.py"
   args:
     chdir: "/root/mailinabox"
+  ignore_errors: yes
+
+- name: Ensure SSHD dir exists
+  file:
+    path: /run/sshd
+    state: directory
 
 - name: Install Mailinabox
   shell: "curl -s https://mailinabox.email/setup.sh | bash"
   environment: "{{ miab_env }}"
 
-- name: Copy patched ssl_certificates.py
-  copy:
-    src: files/ssl_certificates.py
-    dest: /root/mailinabox/management/ssl_certificates.py
-    remote_src: no
+# - name: Copy patched ssl_certificates.py
+#   copy:
+#     src: files/ssl_certificates.py
+#     dest: /root/mailinabox/management/ssl_certificates.py
+#     remote_src: no
 
 - name: Create public dir
   file:
@@ -63,12 +69,12 @@
       curl --insecure -X POST --user "me@{{ inventory_hostname }}:{{ miab_pw }}"
       -d "email=system@{{ item }}"
       -d "password={{ mail_account_passphrase }}"
-      "https://{{ inventory_hostname }}/admin/mail/users/add"
+      "https://localhost/admin/mail/users/add"
   # ignore_errors: true
   loop: "{{ groups['containers'] }}"
 
 - name: Setup additional DNS, mail and certs
-  include: tasks/additional_dns.yml
+  include_tasks: tasks/additional_dns.yml
   loop: "{{ groups['containers'] }}"
   when: hostvars[item].extra_domains is defined
 
@@ -76,7 +82,7 @@
   command: >
       curl --insecure -X POST --user "me@{{ inventory_hostname }}:{{ miab_pw }}"
       -d "{{ firewall_public_ip6[:17] }}{{ hostvars[item].ctid | hex }}:7665:6761:6e62:7477"
-      "https://{{ inventory_hostname }}/admin/dns/custom/{{ item }}/aaaa"
+      "https://localhost/admin/dns/custom/{{ item }}/aaaa"
   loop: "{{ groups['containers'] }}"
 
 

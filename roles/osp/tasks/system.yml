@@ -46,7 +46,7 @@
 
 - name: Install patched nginx (+rtmp)
   get_url:
-    url: https://github.com/gordonzola/ansible-playbooks/raw/master/roles/osp/files/nginx
+    url: https://github.com/vegaelle/ansible-playbooks/raw/master/roles/osp/files/nginx
     dest: /usr/local/nginx/sbin/nginx
     mode: 0755
   # Couldn’t use the copy module due to a UnicodeDecodeError, probably in the

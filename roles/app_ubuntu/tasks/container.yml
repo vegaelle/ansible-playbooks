@@ -1,7 +1,7 @@
 ---
 - name: Set custom facts
   set_fact:
-    image: "{{ image | default('ubuntu-20.04-standard_20.04-1_amd64.tar.gz') }}"
+    image: "{{ image | default('ubuntu-22.04-standard_22.04-1_amd64.tar.gz') }}"
     ostype: "{{ ostype | default('ubuntu') }}"
     disk_size: "{{ disk_size | default(8) }}"
     cpu_cores: "{{ cpu_cores | default(1) }}"

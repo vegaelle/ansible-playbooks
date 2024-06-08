@@ -33,7 +33,7 @@
 - name: Setup U2F
   lineinfile:
     path: /etc/pve/datacenter.cfg
-    line: "u2f: appid=https://{{ hostname }}:8006"
+    line: "webauthn: rp={{hostname}},origin=https://{{ hostname }}:8006,id={{hostname}}"
 
 - name: Ensure that password authentication is disabled
   replace:
@@ -53,9 +53,13 @@
     creates: "/var/lib/vz/template/cache/{{ item }}"
   loop:
     - ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz
+    - ubuntu-22.04-standard_22.04-1_amd64.tar.zst
     # - alpine-3.10-default_20190626_amd64.tar.xz
-    - alpine-3.11-default_20200425_amd64.tar.xz
-    - ubuntu-20.04-standard_20.04-1_amd64.tar.gz
+    # - alpine-3.11-default_20200425_amd64.tar.xz
+    - alpine-3.15-default_20211202_amd64.tar.xz
+    - alpine-3.17-default_20221129_amd64.tar.xz
+    - alpine-3.18-default_20230607_amd64.tar.xz
+    # - ubuntu-20.04-standard_20.04-1_amd64.tar.gz
 
 - name: Ensure vlan module is loaded
   lineinfile:
@@ -112,6 +116,7 @@
   pip:
     executable: pip3
     name: borgmatic
+    state: latest
 
 - name: Install backup SSH keys
   known_hosts:

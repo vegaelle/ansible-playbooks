@@ -16,6 +16,8 @@
           - "{{ item }}@{{ item }}"
           - "-m"
           - "PEM"
+          - "-t"
+          - "rsa"
           - "-f"
           - "tmp/{{ item }}-backup"
         creates: "tmp/{{ item }}-backup"
@@ -25,7 +27,7 @@
 - hosts: hypervisors
   tasks:
     - name: Create containers secrets
-      include: tasks/create_container_secrets.yml
+      include_tasks: tasks/create_container_secrets.yml
       loop: "{{ groups['containers'] }}"
 
 - hosts: 127.0.0.1
@@ -34,7 +36,7 @@
     - name: Save containers variables
       meta: noop
     - name: Call add_host.py
-      command: "./add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
+      command: "./venv2/bin/python add_host.py --host {{ item }} '{{ hostvars[item] | hostvars_tojson }}'"
       loop: "{{ groups['containers'] }}"
     - name: Remove tmp dir
       file:
@@ -44,7 +46,7 @@
 - hosts: backup
   tasks:
     - name: Setup backup servers
-      include: tasks/setup_backup.yml
+      include_tasks: tasks/setup_backup.yml
 
 - hosts: monitoring
   tasks:
@@ -57,10 +59,10 @@
         loop_var: node
 
     - name: Set roles vars
-      include: tasks/roles_vars.yml
+      include_tasks: tasks/roles_vars.yml
 
     - name: Setup monitoring servers
-      include: tasks/setup_monitoring.yml
+      include_tasks: tasks/setup_monitoring.yml
 
 - hosts: hypervisors
   tasks:
@@ -102,13 +104,13 @@
         loop_var: node
 
     - name: Setup hypervisor
-      include: tasks/setup_hypervisor.yml
+      include_tasks: tasks/setup_hypervisor.yml
 
     - name: Set roles vars
-      include: tasks/roles_vars.yml
+      include_tasks: tasks/roles_vars.yml
 
     - name: Create containers
-      include: tasks/create_container.yml
+      include_tasks: tasks/create_container.yml
       loop: "{{ groups['containers'] }}"
 
 - hosts: containers
@@ -128,7 +130,7 @@
         loop_var: node
 
     - name: Set roles vars
-      include: tasks/roles_vars.yml
+      include_tasks: tasks/roles_vars.yml
 
     - name: Get reverse proxy facts
       set_fact:

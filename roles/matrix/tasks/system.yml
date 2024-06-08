@@ -4,10 +4,6 @@
     name: app
     tasks_from: system
 
-# - name: Install pip
-#   apk:
-#     name: python3-pip
-
 - name: Create www-data user
   user:
     name: www-data
@@ -154,7 +150,8 @@
   command: supervisorctl reload
 
 - name: Get latest Element version
-  shell: "curl --silent https://api.github.com/repos/vector-im/element-web/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
+  shell: "curl --silent https://api.github.com/repositories/39487546/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
+  # shell: "curl --silent https://api.github.com/repos/vector-im/element-web/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
   register: element_version
 
 - name: Fetch latest Element version

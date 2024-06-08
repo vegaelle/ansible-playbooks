@@ -36,9 +36,8 @@
     path: /etc/nginx/nginx.conf
     insertafter: "http {"
     block: |
-      lua_load_resty_core off;
       lua_shared_dict prometheus_metrics 10M;
-      lua_package_path "/opt/nginx-lua-prometheus/?.lua";
+      lua_package_path "/usr/share/lua/common/?.lua;/opt/nginx-lua-prometheus/?.lua";
       init_worker_by_lua_block {
         prometheus = require("prometheus").init("prometheus_metrics")
         metric_requests = prometheus:counter(

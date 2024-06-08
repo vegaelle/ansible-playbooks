@@ -102,7 +102,7 @@
     mode: 755
 
 - name: Extract Vaultwarden docker image
-  command: "/opt/docker-image-extract bitwardenrs/server:alpine"
+  command: "/opt/docker-image-extract vaultwarden/server:alpine"
   args:
     chdir: "/tmp"
 
@@ -125,14 +125,14 @@
 - name: Fetch latest web-vault version
   get_url:
     url: "https://github.com/dani-garcia/bw_web_builds/releases/download/{{ web_vault_version.stdout }}/bw_web_{{ web_vault_version.stdout }}.tar.gz"
-    dest: "/srv/web_vault.tar.gz"
+    dest: "/srv/web_vault_{{ web_vault_version.stdout }}.tar.gz"
     owner: www-data
     group: www-data
 
 - name: Untar the archive
-  command: "tar xf /srv/web_vault-{{ web_vault_version.stdout }}.tar.gz -C /srv/public"
-  args:
-    creates: "/srv/public/web-vault"
+  command: "tar xf /srv/web_vault_{{ web_vault_version.stdout }}.tar.gz -C /srv/public"
+  # args:
+  #   creates: "/srv/public/web-vault"
   become: yes
   become_user: www-data
 

@@ -1,5 +1,4 @@
 ---
-
 - name: Create sites config
   template:
     src: templates/vhost_{{ hostvars[item].role }}.j2

@@ -8,12 +8,6 @@
   apt:
     name: python3-pip
 
-# - name: Create PHP user
-#   user:
-#     name: www
-#     groups: www
-#     home: /srv/public
-
 - name: Set up web directory
   file:
     path: /srv/public
@@ -125,7 +119,7 @@
     enabled: yes
 
 - name: Install jupyterhub jupyterlab extension
-  command: "/usr/local/bin/jupyter serverextension enable jupyterlab"
+  command: "/usr/local/bin/jupyter server extension enable jupyterlab"
 
 - name: Install jupyterlab-lsp
   command: "/usr/local/bin/jupyter labextension install @krassowski/jupyterlab-lsp"

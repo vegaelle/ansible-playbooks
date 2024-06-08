@@ -22,6 +22,10 @@
     name: www-data
     home: /srv
 
+- name: Install pip
+  apt:
+    name: python3-pip
+
 - name: Load vars from Funkwhale role
   include_vars:
     file: extra_roles/funkwhale-ansible/defaults/main.yml
@@ -30,7 +34,7 @@
   set_fact:
     funkwhale_install_path: "/srv/funkwhale"
     funkwhale_domain: "{{ inventory_hostname }}"
-    funkwhale_version: "1.2.2"
+    funkwhale_version: "1.3.4"
     funkwhale_hostname: "{{ inventory_hostname }}"
     funkwhale_nginx_managed: false
     funkwhale_api_ip: "10.0.{{ vlan }}.{{ ctid }}"

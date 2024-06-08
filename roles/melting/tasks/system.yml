@@ -65,7 +65,7 @@
 
 - name: Clone git repository
   git:
-    repo: "https://framagit.org/gordon/meltingpotes"
+    repo: "https://framagit.org/vegaelle/meltingpotes"
     dest: "/srv/meltingpotes"
   become: yes
   become_user: www-data

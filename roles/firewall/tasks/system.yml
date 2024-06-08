@@ -29,8 +29,10 @@
     name: ssh-honeypot
     repository: 
       - http://dl-cdn.alpinelinux.org/alpine/edge/testing
-      - http://dl-cdn.alpinelinux.org/alpine/v3.11/main
-      - http://dl-cdn.alpinelinux.org/alpine/v3.11/community
+      - http://dl-cdn.alpinelinux.org/alpine/v3.16/main
+      - http://dl-cdn.alpinelinux.org/alpine/v3.16/community
+    state: latest
+    # update_cache: yes
 
 - name: Create ssh-honeypot (because alpine one is broken)
   openssh_keypair:

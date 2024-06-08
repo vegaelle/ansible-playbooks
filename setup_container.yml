@@ -39,7 +39,7 @@
         loop_var: node
 
     - name: Set roles vars
-      include: tasks/roles_vars.yml
+      include_tasks: tasks/roles_vars.yml
 
     - name: Setup the containers system
       include_role:

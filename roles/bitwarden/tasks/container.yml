@@ -1,7 +1,7 @@
 ---
 - name: Set custom facts
   set_fact:
-    image: "alpine-3.11-default_20200425_amd64.tar.xz"
+    image: "alpine-3.15-default_20211202_amd64.tar.xz"
     ostype: "alpine"
     disk_size: "16"
     cpu_cores: "2"

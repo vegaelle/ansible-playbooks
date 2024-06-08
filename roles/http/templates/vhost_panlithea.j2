@@ -24,7 +24,6 @@ server {
 
     client_max_body_size 32M;
     sendfile on;
-    keepalive_timeout 0;
 
     add_header          Content-Security-Policy "default-src 'self' 'unsafe-inline' maxcdn.bootstrapcdn.com cdn.jsdelivr.net; script-src 'self' 'unsafe-inline'; object-src 'self' blob:;";
 
